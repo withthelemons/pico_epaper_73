@@ -34,11 +34,25 @@
 #include "EPD_7in3f.h"
 #include "GUI_Paint.h"
 #include "GUI_BMPfile.h"
+#include "../main.h"
 
 #include <stdlib.h> // malloc() free()
 #include <string.h>
 
-int EPD_7in3f_display_BMP(const char *path, float vol)
+void show_info(float voltage) {
+    char strvol[8];
+    sprintf(strvol, "%.3fV", voltage);
+    unsigned int percentage = voltageToPercentage(voltage);
+    char strpercentage[5];
+    sprintf(strpercentage, "%u%%", percentage);
+    Paint_DrawString_EN(10, 10, strvol, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
+    Paint_DrawString_EN(10, 26, strpercentage, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
+    if(voltage < 3.7) {
+        Paint_DrawString_EN(10, 42, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
+    }
+}
+
+int EPD_7in3f_display_BMP(const char *path, float voltage)
 {
     printf("e-Paper Init and Clear...\r\n");
     EPD_7IN3F_Init();
@@ -54,35 +68,27 @@ int EPD_7in3f_display_BMP(const char *path, float vol)
     Paint_NewImage(BlackImage, EPD_7IN3F_WIDTH, EPD_7IN3F_HEIGHT, 0, EPD_7IN3F_WHITE);
     Paint_SetScale(7);
 
-#if 1
-    run_mount();
-
     printf("Display BMP\r\n");
     Paint_SelectImage(BlackImage);
     Paint_Clear(EPD_7IN3F_WHITE);
-    
+
+    run_mount();
     GUI_ReadBmp_RGB_7Color(path, 0, 0);
+    run_unmount();
 
     if(Paint_GetRotate() == 90)
         Paint_SetRotate(270);
     else
         Paint_SetRotate(180);
-    char strvol[21] = {0};
-    sprintf(strvol, "%f V", vol);
-    if(vol < 3.3) {
-        Paint_DrawString_EN(10, 10, "Low voltage, please charge in time.", &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
-        Paint_DrawString_EN(10, 26, strvol, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
-    }
+
+    show_info(voltage);
 
     printf("EPD_Display\r\n");
     EPD_7IN3F_Display(BlackImage);
-
-    run_unmount();
-#endif
     printf("Update Path Index...\r\n");
     updatePathIndex();
 
-    printf("Goto Sleep...\r\n\r\n");
+    printf("sending EPD sleep\r\n\r\n");
     EPD_7IN3F_Sleep();
     free(BlackImage);
     BlackImage = NULL;
@@ -90,7 +96,7 @@ int EPD_7in3f_display_BMP(const char *path, float vol)
     return 0;
 }
 
-int EPD_7in3f_display(float vol)
+int EPD_7in3f_display_static_image(float voltage)
 {
     printf("e-Paper Init and Clear...\r\n");
     EPD_7IN3F_Init();
@@ -114,8 +120,8 @@ int EPD_7in3f_display(float vol)
 
     Paint_SetRotate(270);
     char strvol[21] = {0};
-    sprintf(strvol, "%f V", vol);
-    if(vol < 3.3) {
+    sprintf(strvol, "%f V", voltage);
+    if(voltage < 3.3) {
         Paint_DrawString_EN(10, 10, "Low voltage, please charge in time.", &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
         Paint_DrawString_EN(10, 26, strvol, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
     }
@@ -123,7 +129,7 @@ int EPD_7in3f_display(float vol)
     printf("EPD_Display\r\n");
     EPD_7IN3F_Display(BlackImage);
 
-    printf("Goto Sleep...\r\n\r\n");
+    printf("sending EPD sleep\r\n\r\n");
     EPD_7IN3F_Sleep();
     free(BlackImage);
     BlackImage = NULL;
@@ -147,7 +153,7 @@ int EPD_7in3f_test(void)
     Paint_NewImage(BlackImage, EPD_7IN3F_WIDTH, EPD_7IN3F_HEIGHT, 0, EPD_7IN3F_WHITE);
     Paint_SetScale(7);
 
-#if 1   // Drawing on the image
+    // Drawing on the image
     //1.Select Image
     printf("SelectImage:BlackImage\r\n");
     Paint_SelectImage(BlackImage);
@@ -173,9 +179,8 @@ int EPD_7in3f_test(void)
 
     printf("EPD_Display\r\n");
     EPD_7IN3F_Display(BlackImage);
-#endif
 
-    printf("Goto Sleep...\r\n");
+    printf("sending EPD sleep\r\n");
     EPD_7IN3F_Sleep();
     free(BlackImage);
     BlackImage = NULL;

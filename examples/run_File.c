@@ -276,16 +276,16 @@ void sdInitTest(void)
     puts("Goodbye, world!");
 }
 
-char sdTest(void)
+bool sdTest(void)
 {
     sd_card_t *pSD = sd_get_by_num(0);
     FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
     if(FR_OK != fr) {
-        return 1;
+        return false;
     }
     else {
         f_unmount(pSD->pcName);
-        return 0;
+        return true;
     }
 }
 

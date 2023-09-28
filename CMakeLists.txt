@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
+add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0)  # This board never shipped with V1 ROM (as far as I know)
 include(pico_sdk_import.cmake)
 project(Pico_ePaper_73)
 pico_sdk_init()
@@ -21,9 +22,7 @@ include_directories(./lib/RTC)
 include_directories(./lib/led)
 
 # generate an executable file
-add_executable(epd
-main.c
-)
+add_executable(epd main.c main.h)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(epd 1)
