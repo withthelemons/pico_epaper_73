@@ -217,7 +217,6 @@ void ls2file(const char *dir, const char *path) {
     fr =  f_open(&fil, path, FA_CREATE_ALWAYS | FA_WRITE);
     if(FR_OK != fr && FR_EXIST != fr)
         panic("f_open(%s) error: %s (%d) \n", path, FRESULT_str(fr), fr);
-    // f_printf(&fil, "{");
     while (fr == FR_OK && fno.fname[0]) { /* Repeat while an item is found */
         /* Create a string that includes the file name, the file size and the
          attributes string. */
@@ -239,38 +238,11 @@ void ls2file(const char *dir, const char *path) {
         filNum++;
         fr = f_findnext(&dj, &fno); /* Search for next item */
     }
-    // f_printf(&fil, "}");
     fr = f_close(&fil);
     if (FR_OK != fr) {
         printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
     }
     f_closedir(&dj);
-}
-
-void sdInitTest(void)
-{
-    puts("Hello, world!");
-
-    // See FatFs - Generic FAT Filesystem Module, "Application Interface",
-    // http://elm-chan.org/fsw/ff/00index_e.html
-    sd_card_t *pSD = sd_get_by_num(0);
-    FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
-    if (FR_OK != fr) panic("f_mount error: %s (%d)\n", FRESULT_str(fr), fr);
-    FIL fil;
-    const char* const filename = "filename.txt";
-    fr = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
-    if (FR_OK != fr && FR_EXIST != fr)
-        panic("f_open(%s) error: %s (%d)\n", filename, FRESULT_str(fr), fr);
-    if (f_printf(&fil, "Hello, world!\n") < 0) {
-        printf("f_printf failed\n");
-    }
-    fr = f_close(&fil);
-    if (FR_OK != fr) {
-        printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
-    }
-    f_unmount(pSD->pcName);
-
-    puts("Goodbye, world!");
 }
 
 bool sdTest(void)

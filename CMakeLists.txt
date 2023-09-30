@@ -12,7 +12,7 @@ add_subdirectory(lib/Fonts)
 add_subdirectory(lib/GUI)
 add_subdirectory(lib/led)
 add_subdirectory(examples)
-add_subdirectory(lib/FatFs_SPI build)
+add_subdirectory(lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src)
 
 # add a header directory
 include_directories(examples)

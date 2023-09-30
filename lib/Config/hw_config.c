@@ -48,17 +48,19 @@ static spi_t spis[] = {  // One for each SPI.
         .miso_gpio = SD_MISO_PIN,  // GPIO number (not pin number)
         .mosi_gpio = SD_MOSI_PIN,
         .sck_gpio = SD_CLK_PIN,
-        .mosi_gpio = GPIO_DRIVE_STRENGTH_2MA,
-        .sck_gpio = GPIO_DRIVE_STRENGTH_2MA,
+        .set_drive_strength = true,
+        .mosi_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
+        .sck_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
+        .baud_rate = 12500 * 1000,
+    }
+};
 
-        /* The choice of SD card matters! SanDisk runs at the highest speed. PNY
-           can only mangage 5 MHz. Those are all I've tried. */
-        //.baud_rate = 1000 * 1000,
-        .baud_rate = 12500 * 1000,  // The limitation here is SPI slew rate.
-        //.baud_rate = 25 * 1000 * 1000, // Actual frequency: 20833333. Has
-        // worked for me with SanDisk.
-
-        .dma_isr = spi_dma_isr
+static sd_spi_if_t spi_ifs[] = {
+    {
+        .spi = &spis[0],          // Pointer to the SPI driving this card
+        .ss_gpio = SD_CS_PIN,             // The SPI slave select GPIO for this SD card
+        .set_drive_strength = true,
+        .ss_gpio_drive_strength = GPIO_DRIVE_STRENGTH_2MA,
     }
 };
 
@@ -66,15 +68,11 @@ static spi_t spis[] = {  // One for each SPI.
 static sd_card_t sd_cards[] = {  // One for each SD card
     {
         .pcName = "0:",           // Name used to mount device
-        .spi = &spis[0],          // Pointer to the SPI driving this card
-        .ss_gpio = SD_CS_PIN,             // The SPI slave select GPIO for this SD card
-        //.use_card_detect = false,
-        .ss_gpio = GPIO_DRIVE_STRENGTH_2MA,
-        .m_Status = STA_NOINIT
+        .type = SD_IF_SPI,
+        .spi_if_p = &spi_ifs[0],  // Pointer to the SPI interface driving this card
+        .use_card_detect = false,
     }
 };
-
-void spi_dma_isr() { spi_irq_handler(&spis[0]); }
 
 /* ********************************************************************** */
 size_t sd_get_num() { return count_of(sd_cards); }
