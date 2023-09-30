@@ -68,6 +68,6 @@ typedef struct RGB_QUAD {
 } __attribute__ ((packed)) BMPRGBQUAD;
 /**************************************** end ***********************************************/
 
-UBYTE GUI_ReadBmp_RGB_7Color(const char *path, UWORD Xstart, UWORD Ystart);
+void GUI_ReadBmp_RGB_7Color(const char *path);
 
 #endif

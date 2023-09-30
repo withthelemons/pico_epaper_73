@@ -34,8 +34,9 @@
 #include "DEV_Config.h"
 
 // Display resolution
-#define EPD_7IN3F_WIDTH       800
-#define EPD_7IN3F_HEIGHT      480
+#define EPD_7IN3F_WIDTH             800
+#define EPD_7IN3F_HEIGHT            480
+#define EPD_7IN3F_IMAGE_BYTESIZE    192000
 
 /**********************************
 Color Index

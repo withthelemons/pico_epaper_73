@@ -58,8 +58,7 @@ int EPD_7in3f_display_BMP(const char *path, float voltage)
 
     //Create a new image cache
     UBYTE *BlackImage;
-    UDOUBLE Imagesize = ((EPD_7IN3F_WIDTH % 2 == 0)? (EPD_7IN3F_WIDTH / 2 ): (EPD_7IN3F_WIDTH / 2 + 1)) * EPD_7IN3F_HEIGHT;
-    if((BlackImage = (UBYTE *)malloc(Imagesize)) == NULL) {
+    if((BlackImage = (UBYTE *)malloc(EPD_7IN3F_IMAGE_BYTESIZE)) == NULL) {
         printf("Failed to apply for black memory\n");
         return -1;
     }
@@ -73,13 +72,8 @@ int EPD_7in3f_display_BMP(const char *path, float voltage)
 
     // or static image instead: Paint_DrawBitMap(Image7color); Paint_SetRotate(270);
     run_mount();
-    GUI_ReadBmp_RGB_7Color(path, 0, 0);
+    GUI_ReadBmp_RGB_7Color(path);
     run_unmount();
-
-    if(Paint_GetRotate() == 90)
-        Paint_SetRotate(270);
-    else
-        Paint_SetRotate(180);
 
     show_info(voltage);
 
