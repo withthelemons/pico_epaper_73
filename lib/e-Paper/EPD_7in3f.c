@@ -77,24 +77,24 @@ parameter:
 static void EPD_7IN3F_ReadBusyH(void)
 {
     int cnt = 0;
-    printf("e-Paper busy H\r\n");
+    printf("e-Paper busy H\n");
     while(!DEV_Digital_Read(EPD_BUSY_PIN)) {      //LOW: idle, HIGH: busy
         DEV_Delay_ms(10);
         cnt++;
         if(cnt > 5000) {
-            printf("e-Paper busy H force release\r\n");
+            printf("e-Paper busy H force release\n");
             return;
         }
     }
-    printf("e-Paper busy H release\r\n");
+    printf("e-Paper busy H release\n");
 }
 static void EPD_7IN3F_ReadBusyL(void)
 {
-    printf("e-Paper busy L\r\n");
+    printf("e-Paper busy L\n");
     while(DEV_Digital_Read(EPD_BUSY_PIN)) {      //LOW: idle, HIGH: busy
         DEV_Delay_ms(5);
     }
-    printf("e-Paper busy L release\r\n");
+    printf("e-Paper busy L release\n");
 }
 
 /******************************************************************************

@@ -165,7 +165,7 @@ UBYTE DEV_Module_Init(void)
 	// GPIO Config
 	DEV_GPIO_Init();
 
-    printf("DEV_Module_Init OK \r\n");
+    printf("DEV_Module_Init OK \n");
 	return 0;
 }
 
@@ -176,5 +176,5 @@ Info:
 ******************************************************************************/
 void DEV_Module_Exit(void)
 {
-	printf("Module exit \r\n");
+	printf("Module exit \n");
 }

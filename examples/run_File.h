@@ -15,7 +15,7 @@ void run_unmount(void);
 void sdScanDir(void);
 void sdScanDirExist(void);
 
-char isFileExist(const char *path);
+bool fileExists(const char *path);
 void setFilePath(void);
 
 void updatePathIndex(void);

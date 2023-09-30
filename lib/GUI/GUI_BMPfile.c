@@ -61,12 +61,12 @@ UBYTE GUI_ReadBmp_RGB_7Color(const char *path, UWORD Xstart, UWORD Ystart)
     f_lseek(&fil, 0);
     f_read(&fil, &bmpFileHeader, sizeof(BMPFILEHEADER), &br);   // sizeof(BMPFILEHEADER) must be 14
     if (br != sizeof(BMPFILEHEADER)) {
-        printf("f_read bmpFileHeader error\r\n");
+        printf("f_read bmpFileHeader error\n");
         // printf("br is %d\n", br);
     }
     f_read(&fil, &bmpInfoHeader, sizeof(BMPINFOHEADER), &br);   // sizeof(BMPFILEHEADER) must be 50
     if (br != sizeof(BMPINFOHEADER)) {
-        printf("f_read bmpInfoHeader error\r\n");
+        printf("f_read bmpInfoHeader error\n");
         // printf("br is %d\n", br);
     }
     if(bmpInfoHeader.biWidth > bmpInfoHeader.biHeight)
@@ -74,7 +74,7 @@ UBYTE GUI_ReadBmp_RGB_7Color(const char *path, UWORD Xstart, UWORD Ystart)
     else
         Paint_SetRotate(90);
 
-    printf("pixel = %d * %d\r\n", bmpInfoHeader.biWidth, bmpInfoHeader.biHeight);
+    printf("pixel = %d * %d\n", bmpInfoHeader.biWidth, bmpInfoHeader.biHeight);
 
     // Determine if it is a monochrome bitmap
     int readbyte = bmpInfoHeader.biBitCount;
@@ -92,15 +92,15 @@ UBYTE GUI_ReadBmp_RGB_7Color(const char *path, UWORD Xstart, UWORD Ystart)
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {//Total display column
         for(x = 0; x < bmpInfoHeader.biWidth ; x++) {//Show a line in the line
             if(f_read(&fil, (char *)Rdata, 1, &br) != FR_OK) {
-                perror("get bmpdata:\r\n");
+                perror("get bmpdata:\n");
                 break;
             }
             if(f_read(&fil, (char *)Rdata+1, 1, &br) != FR_OK) {
-                perror("get bmpdata:\r\n");
+                perror("get bmpdata:\n");
                 break;
             }
             if(f_read(&fil, (char *)Rdata+2, 1, &br) != FR_OK) {
-                perror("get bmpdata:\r\n");
+                perror("get bmpdata:\n");
                 break;
             }
 

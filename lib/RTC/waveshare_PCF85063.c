@@ -61,7 +61,7 @@ void PCF85063_init()
 		inspect  = inspect+1;
 		if(inspect>5)
 		{
-			printf("Clock stability unknown\r\n");
+			printf("Clock stability unknown\n");
 			break;
 		}
 	}
@@ -144,7 +144,7 @@ void PCF85063_test()
 	{
 		Time_data T;
 		T = PCF85063_GetTime();
-		printf("%d-%d-%d %d:%d:%d\r\n",T.years,T.months,T.days,T.hours,T.minutes,T.seconds);
+		printf("%d-%d-%d %d:%d:%d\n",T.years,T.months,T.days,T.hours,T.minutes,T.seconds);
 		count+=1;
 		DEV_Delay_ms(1000);
 		if(count>6)

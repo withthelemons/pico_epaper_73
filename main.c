@@ -79,7 +79,7 @@ int main(void)
     Time_data Time = {2023-1970, 4, 1, 8, 0, 0};
     Time_data alarmTime = { 2023 - 1970, 4, 1, 8, 30, 0 };
 
-    printf("Init...\r\n");
+    printf("Init\n");
     if(DEV_Module_Init() != 0) {  // DEV init
         return -1;
     }
@@ -92,25 +92,25 @@ int main(void)
 
     float voltage = measureVBAT();
     if(voltage  < 3.5) {   // battery power is low
-        printf("low power ...\r\n");
+        printf("low power\n");
         PCF85063_alarm_Time_Disable();
         ledLowPower();  // LED flash for Low power
         powerOff(); // BAT off
         return 0;
     }
     else {
-        printf("work ...\r\n");
+        printf("work\n");
         ledPowerOn();
     }
 
     bool hasCard = sdTest();
     if(hasCard) {
-        if(isFileExist(fileList)) {   // fileList is exist
-            printf("fileList is exist\r\n");
+        if(fileExists(fileList)) {
+            printf("fileList exists\n");
             sdScanDirExist();
         }
-        else {  // fileList is not exist
-            printf("fileList is not exist\r\n");
+        else {
+            printf("fileList doesn't exist\n");
             sdScanDir();
         }
     }
@@ -125,20 +125,20 @@ int main(void)
             
             #if enChargingRtc
             if(!DEV_Digital_Read(RTC_INT)) {    // RTC interrupt trigger
-                printf("rtc interrupt\r\n");
+                printf("rtc interrupt\n");
                 run_display(Time, alarmTime, hasCard);
             }
             #endif
 
             if(!DEV_Digital_Read(BAT_STATE)) {  // KEY pressed
-                printf("key interrupt\r\n");
+                printf("key interrupt\n");
                 run_display(Time, alarmTime, hasCard, voltage);
             }
             DEV_Delay_ms(500);
         }
     }
     
-    printf("power off ...\r\n");
+    printf("power off\n");
     powerOff(); // BAT off
 
     return 0;

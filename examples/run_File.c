@@ -106,8 +106,8 @@ static bool isSameFile(const char *list, const char *listNew)
     }
 
     if(f_size(&fil) != f_size(&filNew)) {
-        printf("%s is %d, %s is %d\r\n", list, f_size(&fil), listNew, f_size(&filNew));
-        printf("size is different\r\n");
+        printf("%s is %d, %s is %d\n", list, f_size(&fil), listNew, f_size(&filNew));
+        printf("size is different\n");
         return false;
     }
 
@@ -126,7 +126,7 @@ static bool isSameFile(const char *list, const char *listNew)
         free(templistnew);
         f_close(&fil);
         f_close(&filNew);
-        printf("data is same\r\n");
+        printf("data is same\n");
         return true;
     }
     else {
@@ -134,7 +134,7 @@ static bool isSameFile(const char *list, const char *listNew)
         free(templistnew);
         f_close(&fil);
         f_close(&filNew);
-        printf("data is different\r\n");
+        printf("data is different\n");
         return false;
     }
 }
@@ -235,11 +235,8 @@ void ls2file(const char *dir, const char *path) {
         }
         /* Create a string that includes the file name, the file size and the
          attributes string. */
-        if(fno.fname) {
-            // f_printf(&fil, "%d %s\r\n", filNum, fno.fname);
-            f_printf(&fil, "pic/%s\r\n", fno.fname);
-            filNum++;
-        }
+        f_printf(&fil, "pic/%s\n", fno.fname);
+        filNum++;
         fr = f_findnext(&dj, &fno); /* Search for next item */
     }
     // f_printf(&fil, "}");
@@ -294,7 +291,7 @@ void sdScanDir(void)
     run_mount();
 
     ls2file("0:/pic", fileList);
-    printf("ls %s\r\n", fileList);
+    printf("ls %s\n", fileList);
     run_cat(fileList);
 
     run_unmount();
@@ -307,25 +304,25 @@ void sdScanDirExist(void)
     run_mount();
 
     ls2file("0:/pic", fileListNew);
-    printf("ls %s\r\n", fileListNew);
+    printf("ls %s\n", fileListNew);
     run_cat(fileListNew);
 
     if(!isSameFile(fileList, fileListNew)) {
-        printf("Different fileList\r\n");
-        printf("remove fileList\r\n");
+        printf("Different fileList\n");
+        printf("remove fileList\n");
         fr = f_unlink(fileList);
         if (FR_OK != fr) {
             printf("f_unlink error: %s (%d)\n", FRESULT_str(fr), fr);
         }
-        printf("rename fileListNew to fileList\r\n");
+        printf("rename fileListNew to fileList\n");
         fr = f_rename(fileListNew, fileList);
         if (FR_OK != fr) {
             printf("f_rename error: %s (%d)\n", FRESULT_str(fr), fr);
         }
     }
     else {
-        printf("Same fileList\r\n");
-        printf("remove fileListNew\r\n");
+        printf("Same fileList\n");
+        printf("remove fileListNew\n");
         fr = f_unlink(fileListNew);
             if (FR_OK != fr) {
             printf("f_unlink error: %s (%d)\n", FRESULT_str(fr), fr);
@@ -337,6 +334,7 @@ void sdScanDirExist(void)
 
 void fil2array(void)
 {
+    printf("fil2array start\n");
     run_mount();
 
     FRESULT fr; /* Return value */
@@ -344,12 +342,12 @@ void fil2array(void)
 
     fr =  f_open(&fil, fileList, FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("fil2array open error\r\n");
+        printf("fil2array open error\n");
         run_unmount();
         return;
     }
 
-    // printf("ls array path\r\n");
+    // printf("ls array path\n");
     for(int i=0; i<fileNumber; i++) {
         if(f_gets(pathName[i], 999, &fil) == NULL) {
             scanFileNum = i;
@@ -360,6 +358,7 @@ void fil2array(void)
 
     f_close(&fil);
     run_unmount();
+    printf("fil2array end\n");
 }
 
 static void setPathIndex(int index)
@@ -372,12 +371,12 @@ static void setPathIndex(int index)
 
     fr =  f_open(&fil, "index.txt", FA_OPEN_ALWAYS | FA_WRITE);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("setPathIndex open error\r\n");
+        printf("setPathIndex open error\n");
         run_unmount();
         return;
     }
-    f_printf(&fil, "%d\r\n", index);
-    printf("set index is %d\r\n", index);
+    f_printf(&fil, "%d\n", index);
+    printf("set index is %d\n", index);
 
     f_close(&fil);
     run_unmount();
@@ -394,7 +393,7 @@ static int getPathIndex(void)
 
     fr =  f_open(&fil, "index.txt", FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("getPathIndex open error\r\n");
+        printf("getPathIndex open error\n");
         run_unmount();
         return 0;
     }
@@ -402,9 +401,9 @@ static int getPathIndex(void)
     sscanf(indexs, "%d", &index);   // char to int
     if(index >= scanFileNum) {
         index = 0;
-        printf("get index over scanFileNum\r\n");    
+        printf("get index over scanFileNum\n");
     }
-    printf("get index is %d\r\n", index);
+    printf("get index is %d\n", index);
     
     f_close(&fil);
     run_unmount();
@@ -417,12 +416,12 @@ void setFilePath(void)
     int index = 0;
 
     fil2array();
-    if(isFileExist("index.txt")) {
-        printf("index.txt is exist\r\n");
+    if(fileExists("index.txt")) {
+        printf("index.txt exists\n");
         index = getPathIndex();
     }
     else {
-        printf("creat and set Index 0\r\n");    
+        printf("creat and set Index 0\n");
         setPathIndex(0);
     }
     disPath = pathName[index];
@@ -432,17 +431,15 @@ void setFilePath(void)
 void updatePathIndex(void)
 {
     int index = 0;
-
     index = getPathIndex();
     index++;
     if(index >= fileNumber)
         index = 0;
     setPathIndex(index);
-    
-    printf("updatePathIndex index is %d\r\n", index);
+    printf("updated path index index\n");
 }
 
-char isFileExist(const char *path)
+bool fileExists(const char *path)
 {
     FRESULT fr; /* Return value */
     FIL fil;
@@ -451,7 +448,7 @@ char isFileExist(const char *path)
 
     fr =  f_open(&fil, path, FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("%s is not exist\r\n", path);
+        printf("%s doesn't exist\n", path);
         run_unmount();
         return 0;
     }
