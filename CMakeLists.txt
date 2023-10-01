@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0)  # This board never shipped with V1 ROM (as far as I know)
 include(pico_sdk_import.cmake)
 project(Pico_ePaper_73)
@@ -31,4 +32,5 @@ pico_enable_stdio_uart(epd 0)
 # create map/bin/hex/uf2 file etc.
 pico_add_extra_outputs(epd)
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --specs=nano.specs")
 target_link_libraries(epd examples ePaper GUI led Fonts Config RTC FatFs_SPI)

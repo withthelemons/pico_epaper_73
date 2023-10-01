@@ -29,7 +29,6 @@
 #
 ******************************************************************************/
 #include "EPD_Test.h"
-#include "ImageData.h"
 #include "run_File.h"
 #include "EPD_7in3f.h"
 #include "GUI_Paint.h"
@@ -41,26 +40,26 @@
 void show_info(float voltage) {
     char strvol[8];
     sprintf(strvol, "%.3fV", voltage);
-    unsigned int percentage = voltageToPercentage(voltage);
-    char strpercentage[5];
-    sprintf(strpercentage, "%u%%", percentage);
+    float percentage = voltageToPercentage(voltage);
+    char strpercentage[8];
+    sprintf(strpercentage, "%.1f%%", percentage);
     Paint_DrawString_EN(10, 10, strvol, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
     Paint_DrawString_EN(10, 26, strpercentage, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
-    if(voltage < 3.7) {
+    if(voltage < 3.7f) {
         Paint_DrawString_EN(10, 42, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
     }
 }
 
-int EPD_7in3f_display_BMP(const char *path, float voltage)
+void EPD_7in3f_display_BMP(const char *path, uint32_t index, float voltage)
 {
     printf("e-Paper Init and Clear\n");
     EPD_7IN3F_Init();
 
     //Create a new image cache
     UBYTE *BlackImage;
-    if((BlackImage = (UBYTE *)malloc(EPD_7IN3F_IMAGE_BYTESIZE)) == NULL) {
-        printf("Failed to apply for black memory\n");
-        return -1;
+    if((BlackImage = (UBYTE *)calloc(EPD_7IN3F_IMAGE_BYTESIZE,1)) == NULL) {
+        printf("Failed to allocate image memory\n");
+        return;
     }
     printf("Paint_NewImage\n");
     Paint_NewImage(BlackImage, EPD_7IN3F_WIDTH, EPD_7IN3F_HEIGHT, 0, EPD_7IN3F_WHITE);
@@ -68,24 +67,17 @@ int EPD_7in3f_display_BMP(const char *path, float voltage)
 
     printf("Display BMP\n");
     Paint_SelectImage(BlackImage);
-    Paint_Clear(EPD_7IN3F_WHITE);
-
-    // or static image instead: Paint_DrawBitMap(Image7color); Paint_SetRotate(270);
-    run_mount();
+    // Paint_Clear(EPD_7IN3F_WHITE);
     GUI_ReadBmp_RGB_7Color(path);
-    run_unmount();
-
     show_info(voltage);
 
     printf("EPD_Display\n");
     EPD_7IN3F_Display(BlackImage);
     printf("Update Path Index\n");
-    updatePathIndex();
+    updatePathIndex(index);
 
     printf("sending EPD sleep\n");
     EPD_7IN3F_Sleep();
     free(BlackImage);
     BlackImage = NULL;
-
-    return 0;
 }

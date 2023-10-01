@@ -5,24 +5,22 @@
 #include "waveshare_PCF85063.h" // RTC
 #include "DEV_Config.h"
 
-#include <time.h>
 #include <math.h>
 
-extern const char *fileList;
 extern char *disPath;
 
 #define enChargingRtc 0
 
-unsigned int voltageToPercentage(float voltage)
+float voltageToPercentage(float voltage)
 {
-    unsigned int percentage;
-    if (voltage > 4.19) {
+    float percentage;
+    if (voltage > 4.19f) {
         percentage = 100;
-    } else if (voltage < 3.5){
+    } else if (voltage < 3.5f){
         percentage = 0;
     }
     else {
-        percentage = 2808.3808 * pow(voltage, 4) - 43560.9157 * pow(voltage, 3) + 252848.5888 * pow(voltage, 2) - 650767.4615 * voltage + 626532.5703;
+        percentage = 2808.3808f * powf(voltage, 4) - 43560.9157f * powf(voltage, 3) + 252848.5888f * powf(voltage, 2) - 650767.4615f * voltage + 626532.5703f;
     }
     return percentage;
 }
@@ -37,8 +35,8 @@ float measureVBAT(void) {
     }
     float average = (float)sum / 100;
     float voltage = average * conversion_factor;
-    unsigned int percentage = voltageToPercentage(voltage);
-    printf("Raw value: %f, voltage: %fV, percentage: %u\n", average, voltage, percentage);
+    float percentage = voltageToPercentage(voltage);
+    printf("Raw value: %f, voltage: %fV, percentage: %f\n", average, voltage, percentage);
     return voltage;
 }
 
@@ -57,11 +55,10 @@ void chargeState_callback()
 void run_display(Time_data Time, Time_data alarmTime, bool hasCard, float voltage)
 {
     if(hasCard) {
-        setFilePath();
-        EPD_7in3f_display_BMP(disPath, voltage);   // display bmp
-    }
-    else {
-        // EPD_7in3f_display_static_image(voltage);
+        run_mount();
+        uint32_t index = setFilePath();
+        EPD_7in3f_display_BMP(disPath, index, voltage);
+        run_unmount();
     }
 
     PCF85063_clear_alarm_flag();    // clear RTC alarm flag
@@ -91,7 +88,7 @@ int main(void)
     gpio_set_irq_enabled_with_callback(CHARGE_STATE, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, chargeState_callback);
 
     float voltage = measureVBAT();
-    if(voltage  < 3.5) {   // battery power is low
+    if(voltage  < 3.5f) {   // battery power is low
         printf("low power\n");
         PCF85063_alarm_Time_Disable();
         ledLowPower();  // LED flash for Low power
@@ -104,25 +101,12 @@ int main(void)
     }
 
     bool hasCard = sdTest();
-    if(hasCard) {
-        if(fileExists(fileList)) {
-            printf("fileList exists\n");
-            sdScanDirExist();
-        }
-        else {
-            printf("fileList doesn't exist\n");
-            sdScanDir();
-        }
-    }
-
     if(!DEV_Digital_Read(VBUS)) {    // no charge state
         run_display(Time, alarmTime, hasCard, voltage);
     }
     else {  // charge state
         chargeState_callback();
         while(DEV_Digital_Read(VBUS)) {
-            voltage = measureVBAT();
-            
             #if enChargingRtc
             if(!DEV_Digital_Read(RTC_INT)) {    // RTC interrupt trigger
                 printf("rtc interrupt\n");
@@ -131,10 +115,12 @@ int main(void)
             #endif
 
             if(!DEV_Digital_Read(BAT_STATE)) {  // KEY pressed
+                voltage = measureVBAT();
                 printf("key interrupt\n");
                 run_display(Time, alarmTime, hasCard, voltage);
             }
-            DEV_Delay_ms(500);
+            watchdog_update();
+            DEV_Delay_ms(200);
         }
     }
     

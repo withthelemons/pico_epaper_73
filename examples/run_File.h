@@ -2,22 +2,16 @@
 #define _RUN_FILE_H_
 
 #include <stdbool.h>
-
-#define fileNumber 100
-#define fileLen 100
+#include <stdint.h>
 
 bool sdTest(void);
-void sdInitTest(void);
 
 void run_mount(void);
 void run_unmount(void);
 
-void sdScanDir(void);
-void sdScanDirExist(void);
-
 bool fileExists(const char *path);
-void setFilePath(void);
+uint32_t setFilePath(void);
 
-void updatePathIndex(void);
+void updatePathIndex(uint32_t index);
 
 #endif

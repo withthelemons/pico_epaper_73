@@ -30,10 +30,9 @@
 #ifndef _EPD_TEST_H_
 #define _EPD_TEST_H_
 
-int EPD_7in3f_test(void);
+#include <stdint.h>
 
-int EPD_7in3f_display_static_image(float voltage);
-int EPD_7in3f_display_BMP(const char *path, float voltage);
+void EPD_7in3f_display_BMP(const char *path, uint32_t index, float voltage);
 
 
 #endif

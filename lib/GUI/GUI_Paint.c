@@ -279,6 +279,53 @@ void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 	}
 }
 
+void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, unsigned int Color)
+{
+    unsigned int X, Y;
+    switch(Paint.Rotate) {
+        case 0:
+            X = Xpoint;
+            Y = Ypoint;
+            break;
+        case 90:
+            X = Paint.WidthMemory - Ypoint - 1;
+            Y = Xpoint;
+            break;
+        case 180:
+            X = Paint.WidthMemory - Xpoint - 1;
+            Y = Paint.HeightMemory - Ypoint - 1;
+            break;
+        case 270:
+            X = Ypoint;
+            Y = Paint.HeightMemory - Xpoint - 1;
+            break;
+        default:
+            return;
+    }
+
+    switch(Paint.Mirror) {
+        case MIRROR_NONE:
+            break;
+        case MIRROR_HORIZONTAL:
+            X = Paint.WidthMemory - X - 1;
+            break;
+        case MIRROR_VERTICAL:
+            Y = Paint.HeightMemory - Y - 1;
+            break;
+        case MIRROR_ORIGIN:
+            X = Paint.WidthMemory - X - 1;
+            Y = Paint.HeightMemory - Y - 1;
+            break;
+        default:
+            return;
+    }
+
+    UDOUBLE Addr = X / 2  + Y * Paint.WidthByte;
+    UBYTE Rdata = Paint.Image[Addr];
+    Rdata = Rdata & (~(0xF0 >> ((X % 2)*4)));//Clear first, then set value
+    Paint.Image[Addr] = Rdata | ((Color << 4) >> ((X % 2)*4));
+}
+
 /******************************************************************************
 function: Clear the color of the picture
 parameter:
@@ -318,7 +365,7 @@ void Paint_ClearWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWOR
     UWORD X, Y;
     for (Y = Ystart; Y < Yend; Y++) {
         for (X = Xstart; X < Xend; X++) {//8 pixel =  1 byte
-            Paint_SetPixel(X, Y, Color);
+            Paint_SetPixel_fast(X, Y, Color);
         }
     }
 }
@@ -347,13 +394,13 @@ void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color,
                 if(Xpoint + XDir_Num - Dot_Pixel < 0 || Ypoint + YDir_Num - Dot_Pixel < 0)
                     break;
                 // printf("x = %d, y = %d\n", Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel);
-                Paint_SetPixel(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
+                Paint_SetPixel_fast(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
             }
         }
     } else {
         for (XDir_Num = 0; XDir_Num <  Dot_Pixel; XDir_Num++) {
             for (YDir_Num = 0; YDir_Num <  Dot_Pixel; YDir_Num++) {
-                Paint_SetPixel(Xpoint + XDir_Num - 1, Ypoint + YDir_Num - 1, Color);
+                Paint_SetPixel_fast(Xpoint + XDir_Num - 1, Ypoint + YDir_Num - 1, Color);
             }
         }
     }
@@ -533,7 +580,7 @@ parameter:
 void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
                     sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
 {
-    UWORD Page, Column;
+    unsigned int page, column;
 
     if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
         Debug("Paint_DrawChar Input exceeds the normal display range\n");
@@ -543,25 +590,25 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
     uint32_t Char_Offset = (Acsii_Char - ' ') * Font->Height * (Font->Width / 8 + (Font->Width % 8 ? 1 : 0));
     const unsigned char *ptr = &Font->table[Char_Offset];
 
-    for (Page = 0; Page < Font->Height; Page ++ ) {
-        for (Column = 0; Column < Font->Width; Column ++ ) {
+    for (page = 0; page < Font->Height; page ++ ) {
+        for (column = 0; column < Font->Width; column ++ ) {
 
             //To determine whether the font background color and screen background color is consistent
             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
-                if (*ptr & (0x80 >> (Column % 8)))
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Foreground);
+                if (*ptr & (0x80 >> (column % 8)))
+                    Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Foreground);
                     // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
             } else {
-                if (*ptr & (0x80 >> (Column % 8))) {
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Foreground);
+                if (*ptr & (0x80 >> (column % 8))) {
+                    Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Foreground);
                     // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 } else {
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Background);
+                    Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Background);
                     // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 }
             }
             //One pixel is 8 bits
-            if (Column % 8 == 7)
+            if (column % 8 == 7)
                 ptr++;
         }// Write a line
         if (Font->Width % 8 != 0)
@@ -642,15 +689,15 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
                         for (i = 0; i < font->Width; i++) {
                             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             } else {
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 } else {
-                                    Paint_SetPixel(x + i, y + j, Color_Background);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Background);
                                     // Paint_DrawPoint(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             }
@@ -678,15 +725,15 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
                         for (i = 0; i < font->Width; i++) {
                             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             } else {
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 } else {
-                                    Paint_SetPixel(x + i, y + j, Color_Background);
+                                    Paint_SetPixel_fast(x + i, y + j, Color_Background);
                                     // Paint_DrawPoint(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             }

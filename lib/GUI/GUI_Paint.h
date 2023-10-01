@@ -115,7 +115,6 @@ typedef enum {
 **/
 #define WHITE          0xFF
 #define BLACK          0x00
-#define RED            BLACK
 
 #define IMAGE_BACKGROUND    WHITE
 #define FONT_FOREGROUND     BLACK
@@ -185,6 +184,7 @@ void Paint_SelectImage(UBYTE *image);
 void Paint_SetRotate(UWORD Rotate);
 void Paint_SetMirroring(UBYTE mirror);
 void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color);
+void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, unsigned int Color);
 void Paint_SetScale(UBYTE scale);
 
 UWORD Paint_GetRotate(void);
