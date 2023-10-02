@@ -575,7 +575,7 @@ parameter:
     Acsii_Char       ：To display the English characters
     Font             ：A structure pointer that displays a character size
     Color_Foreground : Select the foreground color
-    Color_Background : Select the background color
+    Color_Background : Select the background color (0xFFFF for transparent)
 ******************************************************************************/
 void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
                     sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
@@ -594,17 +594,14 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
         for (column = 0; column < Font->Width; column ++ ) {
 
             //To determine whether the font background color and screen background color is consistent
-            if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
+            if (Color_Background == FONT_BACKGROUND || Color_Background == 0xFFFF) { //this process is to speed up the scan
                 if (*ptr & (0x80 >> (column % 8)))
                     Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Foreground);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
             } else {
                 if (*ptr & (0x80 >> (column % 8))) {
                     Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Foreground);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 } else {
                     Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Background);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 }
             }
             //One pixel is 8 bits
@@ -649,7 +646,7 @@ void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString,
             Xpoint = Xstart;
             Ypoint = Ystart;
         }
-        Paint_DrawChar(Xpoint, Ypoint, * pString, Font, Color_Background, Color_Foreground);
+        Paint_DrawChar(Xpoint, Ypoint, * pString, Font, Color_Foreground, Color_Background);
 
         //The next character of the address
         pString ++;

@@ -43,10 +43,10 @@ void show_info(float voltage) {
     float percentage = voltageToPercentage(voltage);
     char strpercentage[8];
     sprintf(strpercentage, "%.1f%%", percentage);
-    Paint_DrawString_EN(10, 10, strvol, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
-    Paint_DrawString_EN(10, 26, strpercentage, &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
-    if(voltage < 3.7f) {
-        Paint_DrawString_EN(10, 42, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, EPD_7IN3F_WHITE);
+    Paint_DrawString_EN(10, 0, strvol, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strpercentage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    if(percentage <= 15.0f) {
+        Paint_DrawString_EN(10, EPD_7IN3F_HEIGHT - 16, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, 0xFFFF);
     }
 }
 
