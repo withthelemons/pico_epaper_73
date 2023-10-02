@@ -59,93 +59,46 @@ void run_unmount() {
     pSD->mounted = false;
 }
 
-void ls(const char *dir) {
-    FRESULT fr; /* Return value */
-    char const *p_dir = dir;
-    printf("Directory Listing: %s\n", p_dir);
-    DIR dj;      /* Directory object */
-    FILINFO fno; /* File information */
-    memset(&dj, 0, sizeof dj);
-    memset(&fno, 0, sizeof fno);
-    fr = f_findfirst(&dj, &fno, p_dir, "*");
-    if (FR_OK != fr) {
-        printf("f_findfirst error: %s (%d)\n", FRESULT_str(fr), fr);
-        return;
-    }
-    while (fr == FR_OK && fno.fname[0]) { /* Repeat while an item is found */
-        /* Create a string that includes the file name, the file size and the
-         attributes string. */
-        const char *pcWritableFile = "writable file",
-                   *pcReadOnlyFile = "read only file",
-                   *pcDirectory = "directory";
-        const char *pcAttrib;
-        /* Point pcAttrib to a string that describes the file. */
-        if (fno.fattrib & AM_DIR) {
-            pcAttrib = pcDirectory;
-        } else if (fno.fattrib & AM_RDO) {
-            pcAttrib = pcReadOnlyFile;
-        } else {
-            pcAttrib = pcWritableFile;
-        }
-        /* Create a string that includes the file name, the file size and the
-         attributes string. */
-        printf("%s [%s] [size=%llu]\n", fno.fname, pcAttrib, fno.fsize);
 
-        fr = f_findnext(&dj, &fno); /* Search for next item */
-    }
-    f_closedir(&dj);
-}
-
-unsigned int howManyFilesInDir(const char *dir) {
-    FRESULT fr; /* Return value */
-    char const *p_dir  = dir;
-    DIR dj;      /* Directory object */
+int howManyFilesInDir(const char *dir) {
+    FRESULT fr;
+    DIR dp;
     FILINFO fno; /* File information */
-    memset(&dj, 0, sizeof dj);
     memset(&fno, 0, sizeof fno);
-    fr = f_findfirst(&dj, &fno, p_dir, "*");
-    if (FR_OK != fr) {
-        panic("f_findfirst error: %s (%d)\n", FRESULT_str(fr), fr);
-    }
-    unsigned int filNum = 0;
+    f_opendir(&dp, dir);
+    fr = f_readdir(&dp, &fno);
+    int filNum = 0;
     while (fr == FR_OK && fno.fname[0]) {
-        if (fno.fattrib & AM_DIR) {
-            fr = f_findnext(&dj, &fno); /* Search for next item */
-            continue;
+        if (!(fno.fattrib & AM_DIR)) {
+            filNum++;
         }
-        filNum++;
-        fr = f_findnext(&dj, &fno); /* Search for next item */
+        fr = f_readdir(&dp, &fno);
     }
-    f_closedir(&dj);
+    f_closedir(&dp);
     return filNum;
 }
 
 
 FILINFO getNthFile(const char *dir, unsigned int requested) {
-    FRESULT fr; /* Return value */
-    char const *p_dir = dir;
-    DIR dj;      /* Directory object */
-    FILINFO fno; /* File information */
-    memset(&dj, 0, sizeof dj);
-    memset(&fno, 0, sizeof fno);
-    fr = f_findfirst(&dj, &fno, p_dir, "*");
-    if (FR_OK != fr) {
-        panic("f_findfirst error: %s (%d)\n", FRESULT_str(fr), fr);
-    }
     unsigned int filNum = 0;
+    FRESULT fr;
+    DIR dp;      /* Directory object */
+    FILINFO fno; /* File information */
+    memset(&fno, 0, sizeof fno);
+    f_opendir(&dp, dir);
+    fr = f_readdir(&dp, &fno);
     while (fr == FR_OK && fno.fname[0]) {
-        if (fno.fattrib & AM_DIR) {
-            fr = f_findnext(&dj, &fno); /* Search for next item */
-            continue;
+        if (!(fno.fattrib & AM_DIR)) {
+            if (filNum == requested) {
+                f_closedir(&dp);
+                return fno;
+            }
+            filNum++;
         }
-        if (filNum == requested) {
-            f_closedir(&dj);
-            return fno;
-        }
-        filNum++;
-        fr = f_findnext(&dj, &fno); /* Search for next item */
+        fr = f_readdir(&dp, &fno);
     }
-    f_closedir(&dj);
+    f_closedir(&dp);
+    return fno;
 }
 
 bool sdTest(void)
@@ -191,8 +144,8 @@ uint32_t getPathIndex(void)
         return 0;
     }
     f_read(&fil, &index, sizeof(uint32_t),	&br);
-    unsigned int this_many = howManyFilesInDir("pic/");
-    if (index > this_many) {
+    int this_many = howManyFilesInDir("pic/");
+    if (index > this_many-1) {
         index = 0;
     }
     printf("get index is %lu\n", index);

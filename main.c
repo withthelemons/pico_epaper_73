@@ -3,7 +3,6 @@
 
 #include "led.h"
 #include "waveshare_PCF85063.h" // RTC
-#include "DEV_Config.h"
 
 #include <math.h>
 
