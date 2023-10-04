@@ -70,6 +70,14 @@ static void EPD_7IN3F_SendData(UBYTE Data)
     DEV_Digital_Write(EPD_CS_PIN, 1);
 }
 
+static void EPD_7IN3F_SendDataBulk(uint8_t *Data, size_t len)
+{
+    DEV_Digital_Write(EPD_DC_PIN, 1);
+    DEV_Digital_Write(EPD_CS_PIN, 0);
+    DEV_SPI_Write_nByte(Data, len);
+    DEV_Digital_Write(EPD_CS_PIN, 1);
+}
+
 /******************************************************************************
 function :	Wait until the busy_pin goes LOW
 parameter:
@@ -265,20 +273,16 @@ void EPD_7IN3F_Show7Block(void)
 function :	Sends the image buffer in RAM to e-Paper and displays
 parameter:
 ******************************************************************************/
-void EPD_7IN3F_Display(UBYTE *Image)
+void EPD_7IN3F_Display(uint8_t *Image)
 {
     UWORD Width, Height;
     Width = (EPD_7IN3F_WIDTH % 2 == 0)? (EPD_7IN3F_WIDTH / 2 ): (EPD_7IN3F_WIDTH / 2 + 1);
     Height = EPD_7IN3F_HEIGHT;
 
-    printf("sending data");
+    printf("sending data\n");
     EPD_7IN3F_SendCommand(0x10);
-    for (UWORD j = 0; j < Height; j++) {
-        for (UWORD i = 0; i < Width; i++) {
-            EPD_7IN3F_SendData(Image[i + j * Width]);
-        }
-    }
-    printf("data sent");
+    EPD_7IN3F_SendDataBulk(Image, EPD_7IN3F_IMAGE_BYTESIZE);
+    printf("data sent\n");
     EPD_7IN3F_TurnOnDisplay();
 }
 

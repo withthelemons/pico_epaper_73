@@ -51,7 +51,7 @@ void DEV_SPI_WriteByte(UBYTE Value)
     spi_write_blocking(EPD_SPI_PORT, &Value, 1);
 }
 
-void DEV_SPI_Write_nByte(UBYTE *pData, uint32_t Len)
+void DEV_SPI_Write_nByte(uint8_t *pData, size_t Len)
 {
     spi_write_blocking(EPD_SPI_PORT, pData, Len);
 }
@@ -145,7 +145,7 @@ UBYTE DEV_Module_Init(void)
 {
     stdio_init_all();
 	
-    spi_init(EPD_SPI_PORT, 8000 * 1000);
+    spi_init(EPD_SPI_PORT, 40000 * 1000);
     gpio_set_function(EPD_CLK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(EPD_MOSI_PIN, GPIO_FUNC_SPI);
 	

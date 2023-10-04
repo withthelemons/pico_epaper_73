@@ -76,7 +76,6 @@ void EPD_7in3f_display_BMP(const char *path, uint32_t index, float voltage)
 
     printf("Display BMP\n");
     Paint_SelectImage(BlackImage);
-    // Paint_Clear(EPD_7IN3F_WHITE);
     GUI_ReadBmp_RGB_7Color(path);
     show_info(voltage);
 

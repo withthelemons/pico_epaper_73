@@ -60,15 +60,15 @@ void setTimeFromCard() {
 
     fr =  f_open(&fil, "time.dat", FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("time.dat probably doesn't exist\n");
+        printf("time.dat doesn't exist\n");
         return;
     }
     f_read(&fil, &buf, 6,	&br);
     f_close(&fil);
+    f_unlink("time.dat");
 
     Time_data time = {buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]};
     PCF85063_SetTime(time);
-    f_unlink("time.dat");
 }
 
 void run_display(bool hasCard, float voltage)
@@ -127,7 +127,7 @@ int main(void)
                 printf("key interrupt\n");
                 run_display(hasCard, voltage);
             }
-            DEV_Delay_ms(200);
+            DEV_Delay_ms(100);
         }
     }
     

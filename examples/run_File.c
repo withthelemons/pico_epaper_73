@@ -140,7 +140,7 @@ uint32_t getPathIndex(void)
 
     fr =  f_open(&fil, "index.txt", FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("getPathIndex open error\n");
+        printf("index.txt doesn't exist\n");
         return 0;
     }
     f_read(&fil, &index, sizeof(uint32_t),	&br);
@@ -157,12 +157,7 @@ uint32_t getPathIndex(void)
 
 uint32_t setFilePath(void)
 {
-    uint32_t index = 0;
-
-    if(fileExists("index.txt")) {
-        printf("index.txt exists\n");
-        index = getPathIndex();
-    }
+    uint32_t index = getPathIndex();
     const char * base = "pic/";
     FILINFO file_info = getNthFile(base, index);
     if (disPath == NULL) {
@@ -179,20 +174,3 @@ void updatePathIndex(uint32_t index)
     index++;
     setPathIndex(index);
 }
-
-bool fileExists(const char *path)
-{
-    FRESULT fr; /* Return value */
-    FIL fil;
-
-    fr =  f_open(&fil, path, FA_READ);
-    if(FR_OK != fr && FR_EXIST != fr) {
-        printf("%s doesn't exist\n", path);
-        return 0;
-    }
-    
-    f_close(&fil);
-
-    return 1;
-}
-

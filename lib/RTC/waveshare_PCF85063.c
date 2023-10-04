@@ -46,30 +46,6 @@ uint8_t BcdToDec(uint8_t val)
 	return ((val/16)*10 + (val%16));
 }
 
-void PCF85063_init()
-{
-	int inspect = 0;
-    // 0x58 = software reset
-	PCF85063_Write_Byte(CONTROL_1_REG,0x58);
-	DEV_Delay_ms(500);
-	PCF85063_Write_Byte(SECONDS_REG,PCF85063_Read_Byte(SECONDS_REG)|0x80);
-    // 0x80 = alarm interrupt=enabled
-	PCF85063_Write_Byte(CONTROL_2_REG,0x80);
-	while(1)
-	{
-		PCF85063_Write_Byte(SECONDS_REG,PCF85063_Read_Byte(SECONDS_REG)&0x7F);
-		if((PCF85063_Read_Byte(SECONDS_REG)&0x80) == 0)
-		    break;
-		DEV_Delay_ms(500);
-		inspect  = inspect+1;
-		if(inspect>5)
-		{
-			printf("Clock stability unknown\n");
-			break;
-		}
-	}
-}
-
 void PCF85063_SetTime(Time_data time)
 {
     uint8_t years = time.years % 100;
