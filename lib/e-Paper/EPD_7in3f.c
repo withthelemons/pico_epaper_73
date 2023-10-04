@@ -271,12 +271,14 @@ void EPD_7IN3F_Display(UBYTE *Image)
     Width = (EPD_7IN3F_WIDTH % 2 == 0)? (EPD_7IN3F_WIDTH / 2 ): (EPD_7IN3F_WIDTH / 2 + 1);
     Height = EPD_7IN3F_HEIGHT;
 
+    printf("sending data");
     EPD_7IN3F_SendCommand(0x10);
     for (UWORD j = 0; j < Height; j++) {
         for (UWORD i = 0; i < Width; i++) {
             EPD_7IN3F_SendData(Image[i + j * Width]);
         }
     }
+    printf("data sent");
     EPD_7IN3F_TurnOnDisplay();
 }
 

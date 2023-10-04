@@ -25,26 +25,23 @@
 #define 	TIMER_MODE_REG        0x11
 
 typedef struct{
-  UWORD years;
-  UWORD months;
-  UWORD days;
-  UWORD hours;
-  UWORD minutes;
-  UWORD seconds;
+    uint8_t years;
+    uint8_t months;
+    uint8_t days;
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
 }Time_data;
 
-int DecToBcd(int val);
-int BcdToDec(int val);
 void PCF85063_init();
-void PCF85063_SetTime_YMD(int Years,int Months,int Days);
-void PCF85063_SetTime_HMS(int hour,int minute,int second);
+void time_to_str(char* buf, Time_data time);
 Time_data PCF85063_GetTime();
+void PCF85063_SetTime(Time_data time);
 void PCF85063_alarm_Time_Enabled(Time_data time);
 void PCF85063_alarm_Time_Disable();
-int PCF85063_get_alarm_flag();
+bool PCF85063_get_alarm_flag();
 void PCF85063_clear_alarm_flag();
-void PCF85063_test();
-void rtcRunAlarm(Time_data time, Time_data alarmTime);
+void scheduleAlarm(int minutes);
 
 
 #endif

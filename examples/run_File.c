@@ -125,7 +125,7 @@ static void setPathIndex(uint32_t index)
         printf("setPathIndex open error\n");
         return;
     }
-    f_write (&fil, &index, sizeof(uint32_t),	&bw);
+    f_write(&fil, &index, sizeof(uint32_t),	&bw);
     printf("set index is %lu\n", index);
 
     f_close(&fil);
@@ -163,7 +163,7 @@ uint32_t setFilePath(void)
         printf("index.txt exists\n");
         index = getPathIndex();
     }
-    char* base = "pic/";
+    const char * base = "pic/";
     FILINFO file_info = getNthFile(base, index);
     if (disPath == NULL) {
         disPath = (char*)calloc(255,1);

@@ -34,18 +34,27 @@
 #include "GUI_Paint.h"
 #include "GUI_BMPfile.h"
 #include "../main.h"
+#include "../lib/RTC/waveshare_PCF85063.h"
 
 #include <stdlib.h>
 
 void show_info(float voltage) {
-    char strvol[8];
-    sprintf(strvol, "%.3fV", voltage);
+    char strVoltage[8];
+    char strPercentage[8];
+    char strTime[24];
+    sprintf(strVoltage, "%.3fV", voltage);
     float percentage = voltageToPercentage(voltage);
-    char strpercentage[8];
-    sprintf(strpercentage, "%.1f%%", percentage);
-    Paint_DrawString_EN(10, 0, strvol, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
-    Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strpercentage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    sprintf(strPercentage, "%.1f%%", percentage);
+    Time_data time = PCF85063_GetTime();
+    time_to_str(strTime, time);
+    // draw voltage to top left
+    Paint_DrawString_EN(10, 0, strVoltage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    // draw time to top middle
+    Paint_DrawString_EN(EPD_7IN3F_WIDTH/2, 0, strTime, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    // draw percentage to top right
+    Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strPercentage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
     if(percentage <= 15.0f) {
+        // draw warning to bottom left
         Paint_DrawString_EN(10, EPD_7IN3F_HEIGHT - 16, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, 0xFFFF);
     }
 }

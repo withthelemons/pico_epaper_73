@@ -40,10 +40,9 @@
 #include "../e-Paper/EPD_7in3f.h"
 
 void
-load24bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load24bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
     unsigned int br, x, y, color;
     uint8_t Rdata[3];
-    f_lseek(fil, (*bmpFileHeader).bOffset);
     printf("reading data, 24bpp\n");
     for (y = 0; y < (*bmpInfoHeader).biHeight; y++) {//Total display column
         for (x = 0; x < (*bmpInfoHeader).biWidth; x++) {//Show a line in the line
@@ -76,16 +75,14 @@ load24bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fi
             }
             Paint_SetPixel_fast((*bmpInfoHeader).biWidth - 1 - x, y, color);
         }
-        watchdog_update();
     }
 }
 
 void
-load8bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load8bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
     unsigned int br, x, y;
     unsigned int image_width = (*bmpInfoHeader).biWidth;
     uint8_t* read_data = (uint8_t*)malloc(image_width);
-    f_lseek(fil, (*bmpFileHeader).bOffset);
     printf("reading data, 8bpp\n");
     for (y = 0; y < (*bmpInfoHeader).biHeight; y++) {//Total display column
         if (f_read(fil, read_data, image_width, &br) != FR_OK) {
@@ -95,14 +92,13 @@ load8bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fil
         for (x = 0; x < image_width; x++) {//Show a line in the line
             Paint_SetPixel_fast((*bmpInfoHeader).biWidth - 1 - x, y, read_data[x]);
         }
-        watchdog_update();
     }
     free(read_data);
 }
 
 
 void
-load4bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load4bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
     unsigned int br;
     printf("reading data, 4bpp\n");
     uint32_t image_size = (*bmpInfoHeader).bimpImageSize;
@@ -114,12 +110,10 @@ load4bitBMP(BMPFILEHEADER *bmpFileHeader, BMPINFOHEADER *bmpInfoHeader, FIL *fil
         printf("compressed images are not supported (yet)\n");
         return;
     }
-    f_lseek(fil, (*bmpFileHeader).bOffset);
     FRESULT read_result = f_read(fil, Paint.Image, image_size, &br);
     if (read_result != FR_OK) {
         printf("error reading BMP\n");
     }
-    watchdog_update();
 }
 
 void GUI_ReadBmp_RGB_7Color(const char *path) {
@@ -144,6 +138,7 @@ void GUI_ReadBmp_RGB_7Color(const char *path) {
     if (br != sizeof(BMPINFOHEADER)) {
         panic("f_read bmpInfoHeader error\n");
     }
+    f_lseek(&fil, bmpFileHeader.bOffset);
     uint32_t image_width = bmpInfoHeader.biWidth;
     uint32_t image_height = bmpInfoHeader.biHeight;
     printf("image dimensions = %lu * %lu\n", image_width, image_height);
@@ -159,11 +154,11 @@ void GUI_ReadBmp_RGB_7Color(const char *path) {
     // Determine if it is a monochrome bitmap
     uint16_t bit_depth = bmpInfoHeader.biBitCount;
     if (bit_depth == 4) {
-        load4bitBMP( &bmpFileHeader, &bmpInfoHeader, &fil);
+        load4bitBMP(&bmpInfoHeader, &fil);
     } else if (bit_depth == 8) {
-        load8bitBMP( &bmpFileHeader, &bmpInfoHeader, &fil);
+        load8bitBMP(&bmpInfoHeader, &fil);
     } else if (bit_depth == 24) {
-        load24bitBMP(&bmpFileHeader, &bmpInfoHeader, &fil);
+        load24bitBMP(&bmpInfoHeader, &fil);
     } else {
         printf("Unsupported image depth: %u\n", bit_depth);
     } // or static image instead: Paint_DrawBitMap(Image7color); Paint_SetRotate(270);

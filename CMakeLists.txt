@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0)  # This board never shipped with V1 ROM (as far as I know)
+add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0 -DPICO_NO_FPGA_CHECK=1)  # This board never shipped with V1 ROM (as far as I know)
 include(pico_sdk_import.cmake)
 project(Pico_ePaper_73)
 pico_sdk_init()
@@ -26,8 +26,13 @@ include_directories(./lib/led)
 add_executable(epd main.c main.h)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(epd 1)
-pico_enable_stdio_uart(epd 0)
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    pico_enable_stdio_usb(epd 0)
+    pico_enable_stdio_uart(epd 0)
+else()
+    pico_enable_stdio_usb(epd 1)
+    pico_enable_stdio_uart(epd 0)
+endif()
 
 # create map/bin/hex/uf2 file etc.
 pico_add_extra_outputs(epd)

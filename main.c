@@ -3,6 +3,7 @@
 
 #include "led.h"
 #include "waveshare_PCF85063.h" // RTC
+#include "ff.h"
 
 #include <math.h>
 
@@ -51,39 +52,47 @@ void chargeState_callback()
     }
 }
 
-void run_display(Time_data Time, Time_data alarmTime, bool hasCard, float voltage)
+void setTimeFromCard() {
+    uint8_t buf[6];
+    FRESULT fr;
+    FIL fil;
+    unsigned int br;
+
+    fr =  f_open(&fil, "time.dat", FA_READ);
+    if(FR_OK != fr && FR_EXIST != fr) {
+        printf("time.dat probably doesn't exist\n");
+        return;
+    }
+    f_read(&fil, &buf, 6,	&br);
+    f_close(&fil);
+
+    Time_data time = {buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]};
+    PCF85063_SetTime(time);
+    f_unlink("time.dat");
+}
+
+void run_display(bool hasCard, float voltage)
 {
     if(hasCard) {
         run_mount();
+        setTimeFromCard();
         uint32_t index = setFilePath();
         EPD_7in3f_display_BMP(disPath, index, voltage);
         run_unmount();
     }
 
     PCF85063_clear_alarm_flag();    // clear RTC alarm flag
-    rtcRunAlarm(Time, alarmTime);  // RTC run alarm
-}
-
-void addMinutes(Time_data* currentTime, UWORD minutesToAdd) {
-    UWORD oldPlusNew = currentTime->minutes + minutesToAdd;
-    currentTime->hours += oldPlusNew / 60;
-    currentTime->minutes = oldPlusNew % 60;
+    scheduleAlarm(30);  // RTC run alarm
 }
 
 int main(void)
 {
-    Time_data Time = {2023-1970, 4, 1, 8, 0, 0};
-    Time_data alarmTime = { 2023 - 1970, 4, 1, 8, 30, 0 };
-
     printf("Init\n");
     if(DEV_Module_Init() != 0) {  // DEV init
         return -1;
     }
 
     watchdog_enable(8*1000, 1);
-    PCF85063_init();    // RTC init
-    rtcRunAlarm(Time, alarmTime);  // RTC run alarm
-    
     gpio_set_irq_enabled_with_callback(CHARGE_STATE, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, chargeState_callback);
 
     float voltage = measureVBAT();
@@ -101,7 +110,7 @@ int main(void)
 
     bool hasCard = sdTest();
     if(!DEV_Digital_Read(VBUS)) {    // no charge state
-        run_display(Time, alarmTime, hasCard, voltage);
+        run_display(hasCard, voltage);
     }
     else {  // charge state
         chargeState_callback();
@@ -109,16 +118,15 @@ int main(void)
             #if enChargingRtc
             if(!DEV_Digital_Read(RTC_INT)) {    // RTC interrupt trigger
                 printf("rtc interrupt\n");
-                run_display(Time, alarmTime, hasCard);
+                run_display(hasCard, voltage);
             }
             #endif
 
             if(!DEV_Digital_Read(BAT_STATE)) {  // KEY pressed
                 voltage = measureVBAT();
                 printf("key interrupt\n");
-                run_display(Time, alarmTime, hasCard, voltage);
+                run_display(hasCard, voltage);
             }
-            watchdog_update();
             DEV_Delay_ms(200);
         }
     }

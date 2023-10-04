@@ -9,6 +9,7 @@
 * | Info        :   Basic version
 *
 ******************************************************************************/
+#include <time.h>
 #include "DEV_Config.h"
 #include "waveshare_PCF85063.h"
 
@@ -35,12 +36,12 @@ static void PCF85063_Write_Byte(UBYTE Addr, UBYTE Value)
 	I2C_Write_Byte(Addr, Value);
 }
 
-int DecToBcd(int val)
+uint8_t DecToBcd(uint8_t val)
 {
 	return ((val/10)*16 + (val%10)); 
 }
 
-int BcdToDec(int val)
+uint8_t BcdToDec(uint8_t val)
 {
 	return ((val/16)*10 + (val%16));
 }
@@ -48,15 +49,17 @@ int BcdToDec(int val)
 void PCF85063_init()
 {
 	int inspect = 0;
+    // 0x58 = software reset
 	PCF85063_Write_Byte(CONTROL_1_REG,0x58);
 	DEV_Delay_ms(500);
 	PCF85063_Write_Byte(SECONDS_REG,PCF85063_Read_Byte(SECONDS_REG)|0x80);
+    // 0x80 = alarm interrupt=enabled
 	PCF85063_Write_Byte(CONTROL_2_REG,0x80);
 	while(1)
 	{
 		PCF85063_Write_Byte(SECONDS_REG,PCF85063_Read_Byte(SECONDS_REG)&0x7F);
 		if((PCF85063_Read_Byte(SECONDS_REG)&0x80) == 0)
-		break;
+		    break;
 		DEV_Delay_ms(500);
 		inspect  = inspect+1;
 		if(inspect>5)
@@ -67,30 +70,20 @@ void PCF85063_init()
 	}
 }
 
-void PCF85063_SetTime_YMD(int Years,int Months,int Days)
+void PCF85063_SetTime(Time_data time)
 {
-	if(Years>99)
-		Years = 99;
-	if(Months>12)
-		Months = 12;
-	if(Days>31)
-		Days = 31;	
-	PCF85063_Write_Byte(YEARS_REG  ,DecToBcd(Years));
-	PCF85063_Write_Byte(MONTHS_REG ,DecToBcd(Months)&0x1F);
-	PCF85063_Write_Byte(DAYS_REG   ,DecToBcd(Days)&0x3F);
-}
-
-void PCF85063_SetTime_HMS(int hour,int minute,int second)
-{
-	if(hour>23)
-		hour = 23;
-	if(minute>59)
-		minute = 59;
-	if(second>59)
-		second = 59;
-	PCF85063_Write_Byte(HOURS_REG  ,DecToBcd(hour)&0x3F);
-	PCF85063_Write_Byte(MINUTES_REG,DecToBcd(minute)&0x7F);
-	PCF85063_Write_Byte(SECONDS_REG,DecToBcd(second)&0x7F);
+    uint8_t years = time.years % 100;
+    uint8_t months = time.months % 13;
+    uint8_t days = time.days % 32;
+    uint8_t hours = time.hours % 24;
+    uint8_t minutes = time.minutes % 60;
+    uint8_t seconds = time.seconds % 60;
+    PCF85063_Write_Byte(YEARS_REG  ,DecToBcd(years));
+    PCF85063_Write_Byte(MONTHS_REG , DecToBcd(months) & 0x1F);
+    PCF85063_Write_Byte(DAYS_REG   , DecToBcd(days) & 0x3F);
+    PCF85063_Write_Byte(HOURS_REG  ,DecToBcd(hours)&0x3F);
+    PCF85063_Write_Byte(MINUTES_REG,DecToBcd(minutes)&0x7F);
+    PCF85063_Write_Byte(SECONDS_REG,DecToBcd(seconds)&0x7F);
 }
 
 Time_data PCF85063_GetTime()
@@ -103,6 +96,10 @@ Time_data PCF85063_GetTime()
 	time.minutes = BcdToDec(PCF85063_Read_Byte(MINUTES_REG)&0x7F);
 	time.seconds = BcdToDec(PCF85063_Read_Byte(SECONDS_REG)&0x7F);
 	return time;
+}
+
+void time_to_str(char* buf, Time_data time) {
+    sprintf(buf, "%hhu.%hhu.%u %hhu:%02hhu:%02hhu", time.days, time.months, time.years+2000, time.hours, time.minutes, time.seconds);
 }
 
 void PCF85063_alarm_Time_Enabled(Time_data time)
@@ -121,12 +118,9 @@ void PCF85063_alarm_Time_Disable()
 	PCF85063_Write_Byte(CONTROL_2_REG   ,PCF85063_Read_Byte(CONTROL_2_REG)&0x7F);	// Alarm OFF
 }
 
-int PCF85063_get_alarm_flag()
+bool PCF85063_get_alarm_flag()
 {
-	if((PCF85063_Read_Byte(CONTROL_2_REG)&0x40) == 0x40)
-		return 1;
-	else 
-		return 0;
+	return ((PCF85063_Read_Byte(CONTROL_2_REG)&0x40) == 0x40);
 }
 
 void PCF85063_clear_alarm_flag()
@@ -137,9 +131,8 @@ void PCF85063_clear_alarm_flag()
 void PCF85063_test()
 {
     int count = 0;
-	
-	PCF85063_SetTime_YMD(21,2,28);
-	PCF85063_SetTime_HMS(23,59,58);
+    Time_data time = {21, 2, 28, 23, 59, 58};
+    PCF85063_SetTime(time);
 	while(1)
 	{
 		Time_data T;
@@ -152,10 +145,36 @@ void PCF85063_test()
 	}
 }
 
-void rtcRunAlarm(Time_data time, Time_data alarmTime)
+void timeDataToTimeTm(struct tm* time_tm, Time_data *time_data) {
+    time_tm->tm_sec = time_data->seconds;
+    time_tm->tm_min = time_data->minutes;
+    time_tm->tm_hour = time_data->hours;
+    time_tm->tm_mday = time_data->days;
+    time_tm->tm_mon = time_data->months-1;
+    time_tm->tm_year = time_data->years+100;
+}
+
+void timeTmToTimeData(struct tm* time_tm, Time_data *time_data) {
+    time_data->seconds = time_tm->tm_sec;
+    time_data->minutes = time_tm->tm_min;
+    time_data->hours = time_tm->tm_hour;
+    time_data->days = time_tm->tm_mday;
+    time_data->months = time_tm->tm_mon+1;
+    time_data->years = time_tm->tm_year-100;
+}
+
+void addMinutes(Time_data* time_data, int minutesToAdd) {
+    struct tm time_tm;
+    timeDataToTimeTm(&time_tm,time_data);
+    time_t equivalent = mktime(&time_tm);
+    equivalent += (minutesToAdd*60);
+    struct tm *newTime = gmtime(&equivalent);
+    timeTmToTimeData(newTime, time_data);
+}
+
+void scheduleAlarm(int minutes)
 {
-	PCF85063_SetTime_YMD(time.years, time.months, time.days);
-	PCF85063_SetTime_HMS(time.hours, time.minutes, time.seconds);
-    
-    PCF85063_alarm_Time_Enabled(alarmTime);
+    Time_data time = PCF85063_GetTime();
+    addMinutes(&time, minutes);
+    PCF85063_alarm_Time_Enabled(time);
 }
