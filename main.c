@@ -7,7 +7,6 @@
 
 #include <math.h>
 
-extern char *disPath;
 
 #define enChargingRtc 0
 
@@ -76,8 +75,7 @@ void run_display(bool hasCard, float voltage)
     if(hasCard) {
         run_mount();
         setTimeFromCard();
-        uint32_t index = setFilePath();
-        EPD_7in3f_display_BMP(disPath, index, voltage);
+        EPD_7in3f_display_BMP(voltage);
         run_unmount();
     }
 

@@ -224,7 +224,7 @@ void EPD_7IN3F_Init(void)
 function :	Clear screen
 parameter:
 ******************************************************************************/
-void EPD_7IN3F_Clear(UBYTE color)
+void EPD_7IN3F_Clear(uint8_t color)
 {
     UWORD Width, Height;
     Width = (EPD_7IN3F_WIDTH % 2 == 0)? (EPD_7IN3F_WIDTH / 2 ): (EPD_7IN3F_WIDTH / 2 + 1);
@@ -275,10 +275,6 @@ parameter:
 ******************************************************************************/
 void EPD_7IN3F_Display(uint8_t *Image)
 {
-    UWORD Width, Height;
-    Width = (EPD_7IN3F_WIDTH % 2 == 0)? (EPD_7IN3F_WIDTH / 2 ): (EPD_7IN3F_WIDTH / 2 + 1);
-    Height = EPD_7IN3F_HEIGHT;
-
     printf("sending data\n");
     EPD_7IN3F_SendCommand(0x10);
     EPD_7IN3F_SendDataBulk(Image, EPD_7IN3F_IMAGE_BYTESIZE);

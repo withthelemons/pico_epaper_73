@@ -82,7 +82,6 @@ typedef struct {
     UWORD Height;
     UWORD WidthMemory;
     UWORD HeightMemory;
-    UWORD Color;
     UWORD Rotate;
     UWORD Mirror;
     UWORD WidthByte;
@@ -110,21 +109,6 @@ typedef enum {
 } MIRROR_IMAGE;
 #define MIRROR_IMAGE_DFT MIRROR_NONE
 
-/**
- * image color
-**/
-#define WHITE          0xFF
-#define BLACK          0x00
-
-#define IMAGE_BACKGROUND    WHITE
-#define FONT_FOREGROUND     BLACK
-#define FONT_BACKGROUND     WHITE
-
-//4 Gray level
-#define  GRAY1 0x03 //Blackest
-#define  GRAY2 0x02
-#define  GRAY3 0x01 //gray
-#define  GRAY4 0x00 //white
 /**
  * The size of the point
 **/
@@ -179,13 +163,10 @@ typedef struct {
 extern PAINT_TIME sPaint_time;
 
 //init and Clear
-void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color);
+void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate);
 void Paint_SelectImage(UBYTE *image);
 void Paint_SetRotate(UWORD Rotate);
 void Paint_SetMirroring(UBYTE mirror);
-void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color);
-void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, unsigned int Color);
-void Paint_SetScale(UBYTE scale);
 
 UWORD Paint_GetRotate(void);
 
@@ -197,10 +178,13 @@ void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color, DOT_PIXEL Dot_Pixe
 void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, LINE_STYLE Line_Style);
 void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
 void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
+void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, uint8_t Color);
 
 //Display string
-void Paint_DrawChar(UWORD Xstart, UWORD Ystart, const char Acsii_Char, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
-void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawChar(unsigned int Xpoint, unsigned int Ypoint, const char Acsii_Char, sFONT* Font,
+                    uint8_t Color_Foreground, uint8_t Color_Background);
+void Paint_DrawString_EN(unsigned int Xstart, unsigned int Ystart, const char * pString, sFONT* Font,
+                         uint8_t Color_Foreground, uint8_t Color_Background);
 void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT* font, UWORD Color_Foreground, UWORD Color_Background);
 void Paint_DrawNum(UWORD Xpoint, UWORD Ypoint, int32_t Nummber, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
 void Paint_DrawTime(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);

@@ -77,11 +77,7 @@
 ******************************************************************************/
 #include "GUI_Paint.h"
 #include "Debug.h"
-
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h> //memset()
-#include <math.h>
+#include "../e-Paper/EPD_7in3f.h"
 
 PAINT Paint;
 
@@ -93,20 +89,14 @@ parameter:
     Height  :   The height of the picture
     Color   :   Whether the picture is inverted
 ******************************************************************************/
-void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color)
+void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate)
 {
-    Paint.Image = NULL;
     Paint.Image = image;
-
     Paint.WidthMemory = Width;
     Paint.HeightMemory = Height;
-    Paint.Color = Color;    
-    Paint.Scale = 2;
-    Paint.WidthByte = (Width % 8 == 0)? (Width / 8 ): (Width / 8 + 1);
-    Paint.HeightByte = Height;    
-//    printf("WidthByte = %d, HeightByte = %d\n", Paint.WidthByte, Paint.HeightByte);
-//    printf(" EPD_WIDTH / 8 = %d\n",  122 / 8);
-   
+    Paint.Scale = 7;
+    Paint.WidthByte = (Width % 2 == 0)? (Width / 2 ): (Width / 2 + 1);
+    Paint.HeightByte = Height;
     Paint.Rotate = Rotate;
     Paint.Mirror = MIRROR_NONE;
     
@@ -183,22 +173,6 @@ void Paint_SetMirroring(UBYTE mirror)
     }    
 }
 
-void Paint_SetScale(UBYTE scale)
-{
-    if(scale == 2){
-        Paint.Scale = scale;
-        Paint.WidthByte = (Paint.WidthMemory % 8 == 0)? (Paint.WidthMemory / 8 ): (Paint.WidthMemory / 8 + 1);
-    }else if(scale == 4){
-        Paint.Scale = scale;
-        Paint.WidthByte = (Paint.WidthMemory % 4 == 0)? (Paint.WidthMemory / 4 ): (Paint.WidthMemory / 4 + 1);
-    }else if(scale == 7){//Only applicable with 5in65 e-Paper
-		Paint.Scale = scale;
-		Paint.WidthByte = (Paint.WidthMemory % 2 == 0)? (Paint.WidthMemory / 2 ): (Paint.WidthMemory / 2 + 1);;
-	}else{
-        Debug("Set Scale Input parameter error\n");
-        Debug("Scale Only support: 2 4 7\n");
-    }
-}
 /******************************************************************************
 function: Draw Pixels
 parameter:
@@ -206,80 +180,7 @@ parameter:
     Ypoint : At point Y
     Color  : Painted colors
 ******************************************************************************/
-void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
-{
-    if(Xpoint > Paint.Width || Ypoint > Paint.Height){
-        Debug("Exceeding display boundaries\n");
-        return;
-    }      
-    UWORD X, Y;
-    switch(Paint.Rotate) {
-    case 0:
-        X = Xpoint;
-        Y = Ypoint;  
-        break;
-    case 90:
-        X = Paint.WidthMemory - Ypoint - 1;
-        Y = Xpoint;
-        break;
-    case 180:
-        X = Paint.WidthMemory - Xpoint - 1;
-        Y = Paint.HeightMemory - Ypoint - 1;
-        break;
-    case 270:
-        X = Ypoint;
-        Y = Paint.HeightMemory - Xpoint - 1;
-        break;
-    default:
-        return;
-    }
-    
-    switch(Paint.Mirror) {
-    case MIRROR_NONE:
-        break;
-    case MIRROR_HORIZONTAL:
-        X = Paint.WidthMemory - X - 1;
-        break;
-    case MIRROR_VERTICAL:
-        Y = Paint.HeightMemory - Y - 1;
-        break;
-    case MIRROR_ORIGIN:
-        X = Paint.WidthMemory - X - 1;
-        Y = Paint.HeightMemory - Y - 1;
-        break;
-    default:
-        return;
-    }
-
-    if(X > Paint.WidthMemory || Y > Paint.HeightMemory){
-        Debug("Exceeding display boundaries\n");
-        return;
-    }
-    
-    if(Paint.Scale == 2){
-        UDOUBLE Addr = X / 8 + Y * Paint.WidthByte;
-        UBYTE Rdata = Paint.Image[Addr];
-        if(Color == BLACK)
-            Paint.Image[Addr] = Rdata & ~(0x80 >> (X % 8));
-        else
-            Paint.Image[Addr] = Rdata | (0x80 >> (X % 8));
-    }else if(Paint.Scale == 4){
-        UDOUBLE Addr = X / 4 + Y * Paint.WidthByte;
-        Color = Color % 4;//Guaranteed color scale is 4  --- 0~3
-        UBYTE Rdata = Paint.Image[Addr];
-        
-        Rdata = Rdata & (~(0xC0 >> ((X % 4)*2)));//Clear first, then set value
-        Paint.Image[Addr] = Rdata | ((Color << 6) >> ((X % 4)*2));
-    }else if(Paint.Scale == 7){
-		UDOUBLE Addr = X / 2  + Y * Paint.WidthByte;
-		UBYTE Rdata = Paint.Image[Addr];
-		Rdata = Rdata & (~(0xF0 >> ((X % 2)*4)));//Clear first, then set value
-		Paint.Image[Addr] = Rdata | ((Color << 4) >> ((X % 2)*4));
-		// printf("Add =  %d ,data = %d\n",Addr,Rdata);
-	}
-}
-
-void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, unsigned int Color)
+void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, uint8_t Color)
 {
     unsigned int X, Y;
     switch(Paint.Rotate) {
@@ -320,7 +221,7 @@ void Paint_SetPixel_fast(unsigned int Xpoint, unsigned int Ypoint, unsigned int 
             return;
     }
 
-    UDOUBLE Addr = X / 2  + Y * Paint.WidthByte;
+    UDOUBLE Addr = (X / 2  + Y * Paint.WidthByte) % EPD_7IN3F_IMAGE_BYTESIZE+1;
     UBYTE Rdata = Paint.Image[Addr];
     Rdata = Rdata & (~(0xF0 >> ((X % 2)*4)));//Clear first, then set value
     Paint.Image[Addr] = Rdata | ((Color << 4) >> ((X % 2)*4));
@@ -444,7 +345,7 @@ void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
         //Painted dotted line, 2 point is really virtual
         if (Line_Style == LINE_STYLE_DOTTED && Dotted_Len % 3 == 0) {
             //Debug("LINE_DOTTED\n");
-            Paint_DrawPoint(Xpoint, Ypoint, IMAGE_BACKGROUND, Line_width, DOT_STYLE_DFT);
+            Paint_DrawPoint(Xpoint, Ypoint, 0, Line_width, DOT_STYLE_DFT);
             Dotted_Len = 0;
         } else {
             Paint_DrawPoint(Xpoint, Ypoint, Color, Line_width, DOT_STYLE_DFT);
@@ -577,15 +478,10 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color (0xFFFF for transparent)
 ******************************************************************************/
-void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
-                    sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
+void Paint_DrawChar(unsigned int Xpoint, unsigned int Ypoint, const char Acsii_Char,
+                    sFONT* Font, uint8_t Color_Foreground, uint8_t Color_Background)
 {
     unsigned int page, column;
-
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
-        Debug("Paint_DrawChar Input exceeds the normal display range\n");
-        return;
-    }
 
     uint32_t Char_Offset = (Acsii_Char - ' ') * Font->Height * (Font->Width / 8 + (Font->Width % 8 ? 1 : 0));
     const unsigned char *ptr = &Font->table[Char_Offset];
@@ -593,8 +489,7 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
     for (page = 0; page < Font->Height; page ++ ) {
         for (column = 0; column < Font->Width; column ++ ) {
 
-            //To determine whether the font background color and screen background color is consistent
-            if (Color_Background == FONT_BACKGROUND || Color_Background == 0xFFFF) { //this process is to speed up the scan
+            if (Color_Background == EPD_7IN3F_TRANSPARENT) {
                 if (*ptr & (0x80 >> (column % 8)))
                     Paint_SetPixel_fast(Xpoint + column, Ypoint + page, Color_Foreground);
             } else {
@@ -623,16 +518,11 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color
 ******************************************************************************/
-void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString,
-                         sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
+void Paint_DrawString_EN(unsigned int Xstart, unsigned int Ystart, const char * pString,
+                         sFONT* Font, uint8_t Color_Foreground, uint8_t Color_Background)
 {
-    UWORD Xpoint = Xstart;
-    UWORD Ypoint = Ystart;
-
-    if (Xstart > Paint.Width || Ystart > Paint.Height) {
-        Debug("Paint_DrawString_EN Input exceeds the normal display range\n");
-        return;
-    }
+    unsigned int Xpoint = Xstart;
+    unsigned int Ypoint = Ystart;
 
     while (* pString != '\0') {
         //if X direction filled , reposition to(Xstart,Ypoint),Ypoint is Y direction plus the Height of the character
@@ -684,7 +574,7 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
 
                     for (j = 0; j < font->Height; j++) {
                         for (i = 0; i < font->Width; i++) {
-                            if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
+                            if (Color_Background == EPD_7IN3F_TRANSPARENT) {
                                 if (*ptr & (0x80 >> (i % 8))) {
                                     Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
@@ -720,7 +610,7 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
 
                     for (j = 0; j < font->Height; j++) {
                         for (i = 0; i < font->Width; i++) {
-                            if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
+                            if (Color_Background == EPD_7IN3F_TRANSPARENT) {
                                 if (*ptr & (0x80 >> (i % 8))) {
                                     Paint_SetPixel_fast(x + i, y + j, Color_Foreground);
                                     // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);

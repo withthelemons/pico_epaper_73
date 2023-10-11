@@ -10,7 +10,6 @@ void run_mount(void);
 void run_unmount(void);
 
 uint32_t setFilePath(void);
-
-void updatePathIndex(uint32_t index);
+void setPathIndex(uint32_t index);
 
 #endif

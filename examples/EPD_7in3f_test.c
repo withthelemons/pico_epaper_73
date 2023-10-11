@@ -36,7 +36,7 @@
 #include "../main.h"
 #include "../lib/RTC/waveshare_PCF85063.h"
 
-#include <stdlib.h>
+uint8_t BlackImage[EPD_7IN3F_IMAGE_BYTESIZE];
 
 void show_info(float voltage) {
     char strVoltage[8];
@@ -48,44 +48,38 @@ void show_info(float voltage) {
     Time_data time = PCF85063_GetTime();
     time_to_str(strTime, time);
     // draw voltage to top left
-    Paint_DrawString_EN(10, 0, strVoltage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    uint8_t current_background_color = Paint.Image[0];
+    uint8_t font_color;
+    if (current_background_color) {
+        font_color = EPD_7IN3F_BLACK;
+    }
+    else {
+        font_color = EPD_7IN3F_WHITE;
+    }
+    Paint_DrawString_EN(10, 0, strVoltage, &Font16, font_color, EPD_7IN3F_TRANSPARENT);
     // draw time to top middle
-    Paint_DrawString_EN(EPD_7IN3F_WIDTH/2, 0, strTime, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    Paint_DrawString_EN(EPD_7IN3F_WIDTH/2, 0, strTime, &Font16, font_color, EPD_7IN3F_TRANSPARENT);
     // draw percentage to top right
-    Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strPercentage, &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+    Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strPercentage, &Font16, font_color, EPD_7IN3F_TRANSPARENT);
     if(percentage <= 15.0f) {
         // draw warning to bottom left
-        Paint_DrawString_EN(10, EPD_7IN3F_HEIGHT - 16, "Low voltage, please charge.", &Font16, EPD_7IN3F_BLACK, 0xFFFF);
+        Paint_DrawString_EN(10, EPD_7IN3F_HEIGHT - 16, "Low voltage, please charge.", &Font16, font_color, EPD_7IN3F_TRANSPARENT);
     }
 }
 
-void EPD_7in3f_display_BMP(const char *path, uint32_t index, float voltage)
+void EPD_7in3f_display_BMP(float voltage)
 {
     printf("e-Paper Init and Clear\n");
     EPD_7IN3F_Init();
+    Paint_NewImage(BlackImage, EPD_7IN3F_WIDTH, EPD_7IN3F_HEIGHT, 0);
 
-    //Create a new image cache
-    UBYTE *BlackImage;
-    if((BlackImage = (UBYTE *)calloc(EPD_7IN3F_IMAGE_BYTESIZE,1)) == NULL) {
-        printf("Failed to allocate image memory\n");
-        return;
-    }
-    printf("Paint_NewImage\n");
-    Paint_NewImage(BlackImage, EPD_7IN3F_WIDTH, EPD_7IN3F_HEIGHT, 0, EPD_7IN3F_WHITE);
-    Paint_SetScale(7);
-
-    printf("Display BMP\n");
-    Paint_SelectImage(BlackImage);
-    GUI_ReadBmp_RGB_7Color(path);
+    uint32_t index = setFilePath();
+    setPathIndex(index);
+    GUI_ReadBmp_RGB_7Color();
     show_info(voltage);
 
-    printf("EPD_Display\n");
     EPD_7IN3F_Display(BlackImage);
-    printf("Update Path Index\n");
-    updatePathIndex(index);
 
     printf("sending EPD sleep\n");
     EPD_7IN3F_Sleep();
-    free(BlackImage);
-    BlackImage = NULL;
 }

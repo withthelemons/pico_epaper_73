@@ -32,7 +32,7 @@
 
 #include <stdint.h>
 
-void EPD_7in3f_display_BMP(const char *path, uint32_t index, float voltage);
+void EPD_7in3f_display_BMP(float voltage);
 
 
 #endif

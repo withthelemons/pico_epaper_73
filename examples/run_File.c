@@ -1,13 +1,11 @@
 #include "run_File.h"
 #include "f_util.h"
-#include "pico/stdlib.h"
 #include "hw_config.h"
 
 #include <stdio.h>
-#include <stdlib.h> // malloc() free()
 #include <string.h>
 
-char *disPath;
+char disPath[255];
 
 static sd_card_t *sd_get_by_name(const char *const name) {
     for (size_t i = 0; i < sd_get_num(); ++i)
@@ -79,26 +77,29 @@ int howManyFilesInDir(const char *dir) {
 }
 
 
-FILINFO getNthFile(const char *dir, unsigned int requested) {
+unsigned int getNthFile(const char *dir, FILINFO *fno, unsigned int requested) {
     unsigned int filNum = 0;
     FRESULT fr;
     DIR dp;      /* Directory object */
-    FILINFO fno; /* File information */
-    memset(&fno, 0, sizeof fno);
     f_opendir(&dp, dir);
-    fr = f_readdir(&dp, &fno);
-    while (fr == FR_OK && fno.fname[0]) {
-        if (!(fno.fattrib & AM_DIR)) {
+    fr = f_readdir(&dp, fno);
+    while (fr == FR_OK && fno->fname[0]) {
+        if (!(fno->fattrib & AM_DIR)) {
             if (filNum == requested) {
                 f_closedir(&dp);
-                return fno;
+                return ++requested;
             }
             filNum++;
         }
-        fr = f_readdir(&dp, &fno);
+        fr = f_readdir(&dp, fno);
     }
     f_closedir(&dp);
-    return fno;
+    if (requested == 0) {
+        printf("It seems there are no files");
+        return 0;
+    } else {
+        return getNthFile(dir, fno, 0);
+    }
 }
 
 bool sdTest(void)
@@ -114,44 +115,34 @@ bool sdTest(void)
     }
 }
 
-static void setPathIndex(uint32_t index)
+void setPathIndex(uint32_t index)
 {
-    FRESULT fr; /* Return value */
     FIL fil;
     UINT bw;
 
-    fr =  f_open(&fil, "index.txt", FA_OPEN_ALWAYS | FA_WRITE);
+    printf("setting index to %lu\n", index);
+    FRESULT fr =  f_open(&fil, "index.dat", FA_OPEN_ALWAYS | FA_WRITE);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("setPathIndex open error\n");
-        return;
+        panic("f_open() error: %s (%d)\n", FRESULT_str(fr), fr);
     }
-    f_write(&fil, &index, sizeof(uint32_t),	&bw);
-    printf("set index is %lu\n", index);
-
+    f_write(&fil, &index, sizeof(uint32_t), &bw);
     f_close(&fil);
 }
 
 uint32_t getPathIndex(void)
 {
     uint32_t index;
-    FRESULT fr;
     FIL fil;
     unsigned int br;
 
-    fr =  f_open(&fil, "index.txt", FA_READ);
+    FRESULT fr =  f_open(&fil, "index.dat", FA_READ);
     if(FR_OK != fr && FR_EXIST != fr) {
-        printf("index.txt doesn't exist\n");
+        printf("index.dat doesn't exist\n");
         return 0;
     }
     f_read(&fil, &index, sizeof(uint32_t),	&br);
-    int this_many = howManyFilesInDir("pic/");
-    if (index > this_many-1) {
-        index = 0;
-    }
-    printf("get index is %lu\n", index);
-    
+    printf("got index %lu\n", index);
     f_close(&fil);
-    
     return index;
 }
 
@@ -159,18 +150,11 @@ uint32_t setFilePath(void)
 {
     uint32_t index = getPathIndex();
     const char * base = "pic/";
-    FILINFO file_info = getNthFile(base, index);
-    if (disPath == NULL) {
-        disPath = (char*)calloc(255,1);
-    }
+    FILINFO fno; /* File information */
+    memset(&fno, 0, sizeof fno);
+    index = getNthFile(base, &fno, index);
     strcpy(disPath, base);
-    strcat(disPath, file_info.fname);
-    printf("setFilePath is %s \n", disPath);
+    strcat(disPath, fno.fname);
+    printf("disPath set to %s \n", disPath);
     return index;
-}
-
-void updatePathIndex(uint32_t index)
-{
-    index++;
-    setPathIndex(index);
 }
