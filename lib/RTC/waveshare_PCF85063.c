@@ -36,12 +36,12 @@ static void PCF85063_Write_Byte(UBYTE Addr, UBYTE Value)
 	I2C_Write_Byte(Addr, Value);
 }
 
-uint8_t DecToBcd(uint8_t val)
+static inline uint8_t DecToBcd(uint8_t val)
 {
 	return ((val/10)*16 + (val%10)); 
 }
 
-uint8_t BcdToDec(uint8_t val)
+static inline uint8_t BcdToDec(uint8_t val)
 {
 	return ((val/16)*10 + (val%16));
 }
@@ -55,11 +55,11 @@ void PCF85063_SetTime(Time_data time)
     uint8_t minutes = time.minutes % 60;
     uint8_t seconds = time.seconds % 60;
     PCF85063_Write_Byte(YEARS_REG  ,DecToBcd(years));
-    PCF85063_Write_Byte(MONTHS_REG , DecToBcd(months) & 0x1F);
-    PCF85063_Write_Byte(DAYS_REG   , DecToBcd(days) & 0x3F);
-    PCF85063_Write_Byte(HOURS_REG  ,DecToBcd(hours)&0x3F);
-    PCF85063_Write_Byte(MINUTES_REG,DecToBcd(minutes)&0x7F);
-    PCF85063_Write_Byte(SECONDS_REG,DecToBcd(seconds)&0x7F);
+    PCF85063_Write_Byte(MONTHS_REG , DecToBcd(months));
+    PCF85063_Write_Byte(DAYS_REG   , DecToBcd(days));
+    PCF85063_Write_Byte(HOURS_REG  ,DecToBcd(hours));
+    PCF85063_Write_Byte(MINUTES_REG,DecToBcd(minutes));
+    PCF85063_Write_Byte(SECONDS_REG,DecToBcd(seconds));
 }
 
 Time_data PCF85063_GetTime()
@@ -148,9 +148,9 @@ void addMinutes(Time_data* time_data, int minutesToAdd) {
     timeTmToTimeData(newTime, time_data);
 }
 
-void scheduleAlarm(int minutes)
+void scheduleAlarm(int minutesToAdd)
 {
     Time_data time = PCF85063_GetTime();
-    addMinutes(&time, minutes);
+    addMinutes(&time, minutesToAdd);
     PCF85063_alarm_Time_Enabled(time);
 }

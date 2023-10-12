@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0 -DPICO_NO_FPGA_CHECK=1)  # This board never shipped with V1 ROM (as far as I know)
 include(pico_sdk_import.cmake)
+include(pico_extras_import.cmake)
 project(Pico_ePaper_73)
 pico_sdk_init()
 
