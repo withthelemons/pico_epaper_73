@@ -64,6 +64,7 @@
 
 #define EPD_SPI_PORT 	spi1
 #define SD_SPI_PORT 	spi0
+#define SD_SPI_BAUD 	12500000
 #define RTC_I2C_PORT    i2c1
 #define RTC_I2C_Address 0x51
 

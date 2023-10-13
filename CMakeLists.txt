@@ -28,7 +28,7 @@ add_executable(epd main.c main.h)
 
 # enable usb output, disable uart output
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    pico_enable_stdio_usb(epd 0)
+    pico_enable_stdio_usb(epd 1)
     pico_enable_stdio_uart(epd 0)
 else()
     pico_enable_stdio_usb(epd 1)
