@@ -42,66 +42,56 @@ extern char disPath[255];
 static uint8_t read_data[EPD_7IN3F_WIDTH];
 
 void
-load24bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load24bitBMP(FIL *fil, uint32_t image_width, uint32_t image_height) {
     unsigned int br, x, y, color;
-    uint8_t Rdata[3];
     printf("reading data, 24bpp\n");
-    for (y = 0; y < (*bmpInfoHeader).biHeight; y++) {
-        for (x = 0; x < (*bmpInfoHeader).biWidth; x++) {
-            FRESULT read_result = f_read(fil, &Rdata, 3, &br);
+    for (y = 0; y < image_height; y++) {
+        for (x = 0; x < image_width; x++) {
+            FRESULT read_result = f_read(fil, read_data, 3, &br);
             if (read_result != FR_OK) {
                 panic("f_read() error: %s (%d)\n", FRESULT_str(read_result), read_result);
             }
 
-            if (Rdata[0] == 0 && Rdata[1] == 0 && Rdata[2] == 0) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  0;//Black
-                color = 0;
-            } else if (Rdata[0] == 255 && Rdata[1] == 255 && Rdata[2] == 255) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  1;//White
-                color = 1;
-            } else if (Rdata[0] == 0 && Rdata[1] == 255 && Rdata[2] == 0) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  2;//Green
-                color = 2;
-            } else if (Rdata[0] == 255 && Rdata[1] == 0 && Rdata[2] == 0) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  3;//Blue
-                color = 3;
-            } else if (Rdata[0] == 0 && Rdata[1] == 0 && Rdata[2] == 255) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  4;//Red
-                color = 4;
-            } else if (Rdata[0] == 0 && Rdata[1] == 255 && Rdata[2] == 255) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  5;//Yellow
-                color = 5;
-            } else if (Rdata[0] == 0 && Rdata[1] == 128 && Rdata[2] == 255) {
-                // Image[x+(y* bmpInfoHeader.biWidth )] =  6;//Orange
-                color = 6;
+            if (read_data[0] == 0 && read_data[1] == 0 && read_data[2] == 0) {
+                color = EPD_7IN3F_BLACK;
+            } else if (read_data[0] == 255 && read_data[1] == 255 && read_data[2] == 255) {
+                color = EPD_7IN3F_WHITE;
+            } else if (read_data[0] == 0 && read_data[1] == 255 && read_data[2] == 0) {
+                color = EPD_7IN3F_GREEN;
+            } else if (read_data[0] == 255 && read_data[1] == 0 && read_data[2] == 0) {
+                color = EPD_7IN3F_BLUE;
+            } else if (read_data[0] == 0 && read_data[1] == 0 && read_data[2] == 255) {
+                color = EPD_7IN3F_RED;
+            } else if (read_data[0] == 0 && read_data[1] == 255 && read_data[2] == 255) {
+                color = EPD_7IN3F_YELLOW;
+            } else if (read_data[0] == 0 && read_data[1] == 128 && read_data[2] == 255) {
+                color = EPD_7IN3F_ORANGE;
             }
-            Paint_SetPixel_fast((*bmpInfoHeader).biWidth - 1 - x, y, color);
+            Paint_SetPixel_fast(image_width - 1 - x, y, color);
         }
     }
 }
 
 void
-load8bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load8bitBMP(FIL *fil, uint32_t image_width, uint32_t image_height) {
     unsigned int br, x, y;
-    unsigned int image_width = (*bmpInfoHeader).biWidth;
     printf("reading data, 8bpp\n");
-    for (y = 0; y < (*bmpInfoHeader).biHeight; y++) {
+    for (y = 0; y < image_height; y++) {
         FRESULT read_result = f_read(fil, read_data, image_width, &br);
         if (read_result != FR_OK) {
             panic("f_read() error: %s (%d)\n", FRESULT_str(read_result), read_result);
         }
         for (x = 0; x < image_width; x++) {
-            Paint_SetPixel_fast((*bmpInfoHeader).biWidth - 1 - x, y, read_data[x]);
+            Paint_SetPixel_fast(image_width - 1 - x, y, read_data[x]);
         }
     }
 }
 
 
 void
-load4bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
+load4bitBMP(FIL *fil, uint32_t image_size) {
     unsigned int br;
     printf("reading data, 4bpp\n");
-    uint32_t image_size = (*bmpInfoHeader).bimpImageSize;
     if (image_size > EPD_7IN3F_IMAGE_BYTESIZE) {
         printf("image is too big\n");
         return;
@@ -113,12 +103,12 @@ load4bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
 }
 
 void
-load1bitBMP(BMPINFOHEADER *bmpInfoHeader, FIL *fil) {
-    unsigned int br, x, y, i;
+load1bitBMP(FIL *fil, uint32_t image_size) {
+    unsigned int br, x, i;
     uint8_t color;
     printf("reading data, 1bpp\n");
     uint32_t address = 0;
-    uint32_t remainingBytes = bmpInfoHeader->bimpImageSize;
+    uint32_t remainingBytes = image_size;
     while (remainingBytes) {
         FRESULT read_result = f_read(fil, read_data, MIN(800, remainingBytes), &br);
         if (read_result != FR_OK) {
@@ -172,7 +162,7 @@ void GUI_ReadBmp_RGB_7Color() {
     f_lseek(&fil, bmpFileHeader.bOffset);
     uint32_t image_width = bmpInfoHeader.biWidth;
     uint32_t image_height = bmpInfoHeader.biHeight;
-    printf("image dimensions = %lu * %lu\n", image_width, image_height);
+    printf("image dimensions: %lux%lu\n", image_width, image_height);
     if (image_width < image_height) {
         Paint_SetRotate(90);
         image_width = bmpInfoHeader.biHeight;
@@ -184,16 +174,16 @@ void GUI_ReadBmp_RGB_7Color() {
         return;
     }
 
-    // Determine if it is a monochrome bitmap
     uint16_t bit_depth = bmpInfoHeader.biBitCount;
+    uint32_t image_size = bmpInfoHeader.bimpImageSize;
     if (bit_depth == 1) {
-        load1bitBMP(&bmpInfoHeader, &fil);
+        load1bitBMP(&fil, image_size);
     } else if (bit_depth == 4) {
-        load4bitBMP(&bmpInfoHeader, &fil);
+        load4bitBMP(&fil, image_size);
     } else if (bit_depth == 8) {
-        load8bitBMP(&bmpInfoHeader, &fil);
+        load8bitBMP(&fil, image_width, image_height);
     } else if (bit_depth == 24) {
-        load24bitBMP(&bmpInfoHeader, &fil);
+        load24bitBMP(&fil, image_width, image_height);
     } else {
         printf("Unsupported image depth: %u\n", bit_depth);
     } // or static image instead: Paint_DrawBitMap(Image7color); Paint_SetRotate(270);

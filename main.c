@@ -41,8 +41,8 @@ float measureVBAT(void) {
 
 void chargeState_callback() 
 {
-    if(DEV_Digital_Read(VBUS)) {
-        if(!DEV_Digital_Read(CHARGE_STATE)) {  // is charging
+    if(gpio_get(VBUS)) {
+        if(!gpio_get(CHARGE_STATE)) {  // is charging
             ledCharging();
         }
         else {  // charge complete
@@ -70,8 +70,9 @@ void setTimeFromCard() {
     PCF85063_SetTime(time);
 }
 
-void run_display(bool hasCard, float voltage)
+void run_display(float voltage)
 {
+    bool hasCard = sdTest();
     if(hasCard) {
         run_mount();
         setTimeFromCard();
@@ -106,13 +107,12 @@ int main(void)
         ledPowerOn();
     }
 
-    bool hasCard = sdTest();
-    if(!DEV_Digital_Read(VBUS)) {    // no charge state
-        run_display(hasCard, voltage);
+    if(!gpio_get(VBUS)) {    // no charge state
+        run_display(voltage);
     }
     else {  // charge state
         chargeState_callback();
-        while(DEV_Digital_Read(VBUS)) {
+        while(gpio_get(VBUS)) {
             #if enChargingRtc
             if(!DEV_Digital_Read(RTC_INT)) {    // RTC interrupt trigger
                 printf("rtc interrupt\n");
@@ -120,10 +120,10 @@ int main(void)
             }
             #endif
 
-            if(!DEV_Digital_Read(BAT_STATE)) {  // KEY pressed
-                voltage = measureVBAT();
+            if(!gpio_get(BAT_STATE)) {  // KEY pressed
                 printf("key interrupt\n");
-                run_display(hasCard, voltage);
+                voltage = measureVBAT();
+                run_display(voltage);
             }
             DEV_Delay_ms(100);
         }

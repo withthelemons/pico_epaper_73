@@ -3,6 +3,7 @@
 
 void ledPowerOn(void);
 void ledLowPower(void);
+void ledWarning(void);
 void ledCharging(void);
 void ledCharged(void);
 void powerOff(void);

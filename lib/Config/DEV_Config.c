@@ -31,32 +31,6 @@
 
 
 /**
- * GPIO read and write
-**/
-void DEV_Digital_Write(UWORD Pin, UBYTE Value)
-{
-	gpio_put(Pin, Value);
-}
-
-UBYTE DEV_Digital_Read(UWORD Pin)
-{
-	return gpio_get(Pin);
-}
-
-/**
- * SPI
-**/
-void DEV_SPI_WriteByte(UBYTE Value)
-{
-    spi_write_blocking(EPD_SPI_PORT, &Value, 1);
-}
-
-void DEV_SPI_Write_nByte(uint8_t *pData, size_t Len)
-{
-    spi_write_blocking(EPD_SPI_PORT, pData, Len);
-}
-
-/**
  * @brief I2C write byte
  * 
  * @param Reg 
@@ -128,13 +102,13 @@ void DEV_GPIO_Init(void)
 	// POWER
 	DEV_GPIO_Mode(EPD_POWER_EN, 1);
 	DEV_GPIO_Mode(VBUS, 0);
-	
 
-	DEV_Digital_Write(LED_ACT, 0);	// LED off
-	DEV_Digital_Write(LED_PWR, 0);	// LED off
-	DEV_Digital_Write(EPD_CS_PIN, 1);
-	DEV_Digital_Write(BAT_OFF, 1);	// BAT on
-	DEV_Digital_Write(EPD_POWER_EN, 1);	// EPD power on
+
+    gpio_put(LED_ACT, 0);    // LED off
+    gpio_put(LED_PWR, 0);    // LED off
+    gpio_put(EPD_CS_PIN, 1);
+    gpio_put(BAT_OFF, 1);    // BAT on
+    gpio_put(EPD_POWER_EN, 1);    // EPD power on
 }
 /******************************************************************************
 function:	Module Initialize, the library and initialize the pins, SPI protocol

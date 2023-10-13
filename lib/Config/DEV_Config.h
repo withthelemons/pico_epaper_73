@@ -98,13 +98,6 @@
 #define Power_Mode      23
 #define VBAT            29
 
-/*------------------------------------------------------------------------------------------------------*/
-void DEV_Digital_Write(UWORD Pin, UBYTE Value);
-UBYTE DEV_Digital_Read(UWORD Pin);
-
-void DEV_SPI_WriteByte(UBYTE Value);
-void DEV_SPI_Write_nByte(uint8_t *pData, size_t Len);
-
 void I2C_Write_Byte(UBYTE Reg, UBYTE Value);
 UBYTE I2C_Read_Byte(UBYTE Reg);
 

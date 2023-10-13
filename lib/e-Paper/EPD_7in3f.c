@@ -28,23 +28,25 @@
 # THE SOFTWARE.
 #
 ******************************************************************************/
-#include "EPD_7in3f.h"
-#include "pico/sleep.h"
 #include "pico/stdlib.h"
+#include "pico/sleep.h"
 #include "hardware/clocks.h"
 #include "hardware/rosc.h"
+#include <hardware/xosc.h>
+#include <hardware/pll.h>
 #include "hardware/structs/scb.h"
+#include "EPD_7in3f.h"
 
 /******************************************************************************
 function :	Software reset
 parameter:
 ******************************************************************************/
 static void EPD_7IN3F_Reset(void) {
-    DEV_Digital_Write(EPD_RST_PIN, 1);
+    gpio_put(EPD_RST_PIN, 1);
     sleep_ms(20);
-    DEV_Digital_Write(EPD_RST_PIN, 0);
+    gpio_put(EPD_RST_PIN, 0);
     sleep_ms(2);
-    DEV_Digital_Write(EPD_RST_PIN, 1);
+    gpio_put(EPD_RST_PIN, 1);
     sleep_ms(20);
 }
 
@@ -53,11 +55,11 @@ function :	send command
 parameter:
      Reg : Command register
 ******************************************************************************/
-static void EPD_7IN3F_SendCommand(UBYTE Reg) {
-    DEV_Digital_Write(EPD_DC_PIN, 0);
-    DEV_Digital_Write(EPD_CS_PIN, 0);
-    DEV_SPI_WriteByte(Reg);
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+static void EPD_7IN3F_SendCommand(uint8_t reg) {
+    gpio_put(EPD_DC_PIN, 0);
+    gpio_put(EPD_CS_PIN, 0);
+    spi_write_blocking(EPD_SPI_PORT, &reg, 1);
+    gpio_put(EPD_CS_PIN, 1);
 }
 
 /******************************************************************************
@@ -65,21 +67,32 @@ function :	send data
 parameter:
     Data : Write data
 ******************************************************************************/
-static void EPD_7IN3F_SendData(UBYTE Data) {
-    DEV_Digital_Write(EPD_DC_PIN, 1);
-    DEV_Digital_Write(EPD_CS_PIN, 0);
-    DEV_SPI_WriteByte(Data);
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+static void EPD_7IN3F_SendData(uint8_t data) {
+    gpio_put(EPD_DC_PIN, 1);
+    gpio_put(EPD_CS_PIN, 0);
+    spi_write_blocking(EPD_SPI_PORT, &data, 1);
+    gpio_put(EPD_CS_PIN, 1);
 }
 
-static void EPD_7IN3F_SendDataBulk(uint8_t *Data, size_t len) {
-    DEV_Digital_Write(EPD_DC_PIN, 1);
-    DEV_Digital_Write(EPD_CS_PIN, 0);
-    DEV_SPI_Write_nByte(Data, len);
-    DEV_Digital_Write(EPD_CS_PIN, 1);
+static void EPD_7IN3F_SendDataBulk(uint8_t *data, size_t len) {
+    gpio_put(EPD_DC_PIN, 1);
+    gpio_put(EPD_CS_PIN, 0);
+    spi_write_blocking(EPD_SPI_PORT, data, len);
+    gpio_put(EPD_CS_PIN, 1);
 }
 
-static void recover_from_sleep(uint scb_orig, uint clock0_orig, uint clock1_orig) {
+static void rosc_enable(void)
+{
+    uint32_t tmp = rosc_hw->ctrl;
+    tmp &= (~ROSC_CTRL_ENABLE_BITS);
+    tmp |= (ROSC_CTRL_ENABLE_VALUE_ENABLE << ROSC_CTRL_ENABLE_LSB);
+    rosc_write(&rosc_hw->ctrl, tmp);
+    // Wait for stable
+    while ((rosc_hw->status & ROSC_STATUS_STABLE_BITS) != ROSC_STATUS_STABLE_BITS);
+}
+
+// https://github.com/ghubcoder/micropython-pico-deepsleep/blob/d8c8c67cd36959e325c16a3736d471e61952db6d/ports/rp2sleep/modpicosleep.c#L53C6-L53C24
+void recover_from_sleep(uint scb_orig, uint clock0_orig, uint clock1_orig){
     //Re-enable ring Oscillator control
     rosc_write(&rosc_hw->ctrl, ROSC_CTRL_ENABLE_BITS);
 
@@ -102,21 +115,24 @@ static void EPD_7IN3F_ReadBusyH(void) {
     bool pin_high = false;
 
     // run soft-sleep loop for a few moments to see if the pin goes high
-    for (int i = 0; i < 3; i++) {
-        if (DEV_Digital_Read(EPD_BUSY_PIN)) {
+    for (int i = 0; i < 50; i++) {
+        if (gpio_get(EPD_BUSY_PIN)) {
             pin_high = true;
             break;
         }
         sleep_ms(10);
     }
+    watchdog_update();
     // don't go to sleep if the pin is already high
     if (!pin_high) {
         printf("dormant sleep");
+        //save values for later
         uint scb_orig = scb_hw->scr;
         uint clock0_orig = clocks_hw->sleep_en0;
         uint clock1_orig = clocks_hw->sleep_en1;
+
         sleep_run_from_xosc();
-        sleep_goto_dormant_until_pin(EPD_BUSY_PIN, true, true);
+        sleep_goto_dormant_until_level_high(EPD_BUSY_PIN);
         recover_from_sleep(scb_orig, clock0_orig, clock1_orig);
         printf("woke up");
     }
