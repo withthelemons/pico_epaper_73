@@ -1,10 +1,14 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 add_definitions(-DPICO_FLOAT_SUPPORT_ROM_V1=0 -DPICO_DOUBLE_SUPPORT_ROM_V1=0 -DPICO_NO_FPGA_CHECK=1)  # This board never shipped with V1 ROM (as far as I know)
 include(pico_sdk_import.cmake)
 include(pico_extras_import.cmake)
 project(Pico_ePaper_73)
 pico_sdk_init()
+
+# generate an executable file
+add_executable(epd main.c main.h)
+
 
 # add a compilation subdirectory
 add_subdirectory(lib/Config)
@@ -13,18 +17,16 @@ add_subdirectory(lib/RTC)
 add_subdirectory(lib/Fonts)
 add_subdirectory(lib/GUI)
 add_subdirectory(lib/led)
-add_subdirectory(examples)
 add_subdirectory(lib/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico/src)
+add_subdirectory(examples)
 
 # add a header directory
 include_directories(examples)
+include_directories(./lib/e-Paper)
 include_directories(./lib/Config)
 include_directories(./lib/GUI)
 include_directories(./lib/RTC)
 include_directories(./lib/led)
-
-# generate an executable file
-add_executable(epd main.c main.h)
 
 # enable usb output, disable uart output
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
@@ -39,4 +41,4 @@ endif()
 pico_add_extra_outputs(epd)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --specs=nano.specs")
-target_link_libraries(epd examples ePaper GUI led Fonts Config RTC FatFs_SPI)
+target_link_libraries(epd no-OS-FatFS-SD-SDIO-SPI-RPi-Pico pico_stdlib hardware_spi hardware_adc hardware_i2c hardware_rosc hardware_sleep)

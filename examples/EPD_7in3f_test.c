@@ -61,10 +61,6 @@ void show_info(float voltage) {
     Paint_DrawString_EN(EPD_7IN3F_WIDTH/2, 0, strTime, &Font16, font_color, EPD_7IN3F_TRANSPARENT);
     // draw percentage to top right
     Paint_DrawString_EN(EPD_7IN3F_WIDTH-65, 0, strPercentage, &Font16, font_color, EPD_7IN3F_TRANSPARENT);
-    if(percentage <= 15.0f) {
-        // draw warning to bottom left
-        Paint_DrawString_EN(10, EPD_7IN3F_HEIGHT - 16, "Low voltage, please charge.", &Font16, font_color, EPD_7IN3F_TRANSPARENT);
-    }
 }
 
 void EPD_7in3f_display_BMP(float voltage)

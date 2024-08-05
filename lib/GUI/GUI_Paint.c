@@ -126,24 +126,20 @@ parameter:
 ******************************************************************************/
 void Paint_SetRotate(UWORD Rotate)
 {
-    if(Rotate == ROTATE_0 || Rotate == ROTATE_90 || Rotate == ROTATE_180 || Rotate == ROTATE_270) {
-        Debug("Set image Rotate %d\n", Rotate);
-        if(Rotate == ROTATE_90 || Rotate ==  ROTATE_270) {
-            if(Paint.WidthMemory == Paint.Width) {
-                Paint.Width = Paint.HeightMemory;
-                Paint.Height = Paint.WidthMemory;
-            }
+    assert(Rotate == ROTATE_0 || Rotate == ROTATE_90 || Rotate == ROTATE_180 || Rotate == ROTATE_270);
+    if(Rotate == ROTATE_90 || Rotate ==  ROTATE_270) {
+        if(Paint.WidthMemory == Paint.Width) {
+            Paint.Width = Paint.HeightMemory;
+            Paint.Height = Paint.WidthMemory;
         }
-        else {
-            if(Paint.WidthMemory != Paint.Width) {
-                Paint.Width = Paint.WidthMemory;
-                Paint.Height = Paint.HeightMemory;
-            }
-        }
-        Paint.Rotate = Rotate;
-    } else {
-        Debug("rotate = 0, 90, 180, 270\n");
     }
+    else {
+        if(Paint.WidthMemory != Paint.Width) {
+            Paint.Width = Paint.WidthMemory;
+            Paint.Height = Paint.HeightMemory;
+        }
+    }
+    Paint.Rotate = Rotate;
 }
 
 /******************************************************************************

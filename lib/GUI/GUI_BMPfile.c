@@ -38,7 +38,7 @@
 #include "ff.h"
 #include "../e-Paper/EPD_7in3f.h"
 
-extern char disPath[255];
+extern char disPath[265];
 static uint8_t read_data[EPD_7IN3F_WIDTH];
 
 void

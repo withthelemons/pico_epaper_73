@@ -1,5 +1,5 @@
 #include "EPD_Test.h"   // Examples
-#include "run_File.h"
+#include "run_file.h"
 
 #include "led.h"
 #include "waveshare_PCF85063.h" // RTC
@@ -74,7 +74,6 @@ void run_display(float voltage)
 {
     bool hasCard = sdTest();
     if(hasCard) {
-        run_mount();
         setTimeFromCard();
         EPD_7in3f_display_BMP(voltage);
         run_unmount();
@@ -116,7 +115,7 @@ int main(void)
             #if enChargingRtc
             if(!DEV_Digital_Read(RTC_INT)) {    // RTC interrupt trigger
                 printf("rtc interrupt\n");
-                run_display(hasCard, voltage);
+                run_display(voltage);
             }
             #endif
 

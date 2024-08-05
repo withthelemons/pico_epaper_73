@@ -1,6 +1,1 @@
-# Find all source files in a single current directory
-# Save the name to DIR_Fonts_SRCS
-aux_source_directory(. DIR_Fonts_SRCS)
-
-# Generate the link library
-add_library(Fonts ${DIR_Fonts_SRCS})
+target_sources(epd PUBLIC font8.c font12.c font12CN.c font16.c font20.c font24.c font24CN.c fonts.h)

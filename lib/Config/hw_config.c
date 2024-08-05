@@ -40,7 +40,6 @@ static sd_spi_if_t spi_if = {
 
 // Hardware Configuration of the SD Card "objects"
 static sd_card_t sd_card = {  // One for each SD card
-    .pcName = "0:",           // Name used to mount device
     .type = SD_IF_SPI,
     .spi_if_p = &spi_if,  // Pointer to the SPI interface driving this card
     .use_card_detect = false,

@@ -5,56 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
-char disPath[255];
-
-static sd_card_t *sd_get_by_name(const char *const name) {
-    for (size_t i = 0; i < sd_get_num(); ++i)
-        if (0 == strcmp(sd_get_by_num(i)->pcName, name)) return sd_get_by_num(i);
-    // DBG_PRINTF("%s: unknown name %s\n", __func__, name);
-    return NULL;
-}
-
-static FATFS *sd_get_fs_by_name(const char *name) {
-    for (size_t i = 0; i < sd_get_num(); ++i)
-        if (0 == strcmp(sd_get_by_num(i)->pcName, name)) return &sd_get_by_num(i)->fatfs;
-    // DBG_PRINTF("%s: unknown name %s\n", __func__, name);
-    return NULL;
-}
-
-void run_mount() {
-    const char *arg1 = strtok(NULL, " ");
-    if (!arg1) arg1 = sd_get_by_num(0)->pcName;
-    FATFS *p_fs = sd_get_fs_by_name(arg1);
-    if (!p_fs) {
-        printf("Unknown logical drive number: \"%s\"\n", arg1);
-        return;
-    }
-    FRESULT fr = f_mount(p_fs, arg1, 1);
-    if (FR_OK != fr) {
-        printf("f_mount error: %s (%d)\n", FRESULT_str(fr), fr);
-        return;
-    }
-    sd_card_t *pSD = sd_get_by_name(arg1);
-    // myASSERT(pSD);
-    pSD->mounted = true;
-}
+char disPath[265] = "pic/";
 
 void run_unmount() {
-    const char *arg1 = strtok(NULL, " ");
-    if (!arg1) arg1 = sd_get_by_num(0)->pcName;
-    FATFS *p_fs = sd_get_fs_by_name(arg1);
-    if (!p_fs) {
-        printf("Unknown logical drive number: \"%s\"\n", arg1);
-        return;
-    }
-    FRESULT fr = f_unmount(arg1);
-    if (FR_OK != fr) {
-        printf("f_unmount error: %s (%d)\n", FRESULT_str(fr), fr);
-        return;
-    }
-    sd_card_t *pSD = sd_get_by_name(arg1);
-    // myASSERT(pSD);
-    pSD->mounted = false;
+    f_unmount("");
 }
 
 
@@ -77,11 +31,11 @@ int howManyFilesInDir(const char *dir) {
 }
 
 
-unsigned int getNthFile(const char *dir, FILINFO *fno, unsigned int requested) {
+unsigned int getNthFile(FILINFO *fno, unsigned int requested) {
     unsigned int filNum = 0;
     FRESULT fr;
     DIR dp;      /* Directory object */
-    f_opendir(&dp, dir);
+    f_opendir(&dp, "pic/");
     fr = f_readdir(&dp, fno);
     while (fr == FR_OK && fno->fname[0]) {
         if (!(fno->fattrib & AM_DIR)) {
@@ -96,23 +50,16 @@ unsigned int getNthFile(const char *dir, FILINFO *fno, unsigned int requested) {
     f_closedir(&dp);
     if (requested == 0) {
         printf("It seems there are no files");
-        return 0;
-    } else {
-        return getNthFile(dir, fno, 0);
+        return 0; 
     }
+    return getNthFile(fno, 0);
 }
 
 bool sdTest(void)
 {
-    sd_card_t *pSD = sd_get_by_num(0);
-    FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
-    if(FR_OK != fr) {
-        return false;
-    }
-    else {
-        f_unmount(pSD->pcName);
-        return true;
-    }
+    FATFS fs;
+    FRESULT fr = f_mount(&fs, "", 1);
+    return FR_OK == fr;
 }
 
 void setPathIndex(uint32_t index)
@@ -149,11 +96,9 @@ uint32_t getPathIndex(void)
 uint32_t setFilePath(void)
 {
     uint32_t index = getPathIndex();
-    const char * base = "pic/";
     FILINFO fno; /* File information */
     memset(&fno, 0, sizeof fno);
-    index = getNthFile(base, &fno, index);
-    strcpy(disPath, base);
+    index = getNthFile(&fno, index);
     strcat(disPath, fno.fname);
     printf("disPath set to %s \n", disPath);
     return index;
