@@ -29,12 +29,16 @@
 #
 ******************************************************************************/
 #include "pico/stdlib.h"
+
+#if defined(USE_DORMANT_SLEEP)
 #include "pico/sleep.h"
 #include "hardware/clocks.h"
 #include "hardware/rosc.h"
 #include <hardware/xosc.h>
 #include <hardware/pll.h>
 #include "hardware/structs/scb.h"
+#endif
+
 #include "EPD_7in3f.h"
 
 /******************************************************************************
@@ -80,7 +84,7 @@ static void EPD_7IN3F_SendDataBulk(uint8_t *data, size_t len) {
     spi_write_blocking(EPD_SPI_PORT, data, len);
     gpio_put(EPD_CS_PIN, 1);
 }
-
+#if defined(USE_DORMANT_SLEEP)
 static void rosc_enable(void)
 {
     uint32_t tmp = rosc_hw->ctrl;
@@ -139,6 +143,21 @@ static void EPD_7IN3F_ReadBusyH(void) {
 
     printf("e-Paper busy H release\n");
 }
+#else
+static void EPD_7IN3F_ReadBusyH(void) {
+    printf("e-Paper busy H\n");
+
+    for (int i = 0; i < 5000; i++) {
+        watchdog_update();
+        if (gpio_get(EPD_BUSY_PIN)) {
+            break;
+        }
+        sleep_ms(10);
+    }
+
+    printf("e-Paper busy H release\n");
+}
+#endif
 
 /******************************************************************************
 function :	Turn On Display
