@@ -6,6 +6,7 @@
 
 bool sdTest(void);
 
+void run_mount(void);
 void run_unmount(void);
 
 uint32_t setFilePath(void);

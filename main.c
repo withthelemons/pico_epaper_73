@@ -74,6 +74,7 @@ void run_display(float voltage)
 {
     bool hasCard = sdTest();
     if(hasCard) {
+        run_mount();
         setTimeFromCard();
         EPD_7in3f_display_BMP(voltage);
         run_unmount();

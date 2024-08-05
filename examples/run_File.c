@@ -7,8 +7,55 @@
 
 char disPath[265] = "pic/";
 
+static sd_card_t *sd_get_by_name(const char *const name) {
+    for (size_t i = 0; i < sd_get_num(); ++i)
+        if (0 == strcmp(sd_get_by_num(i)->pcName, name)) return sd_get_by_num(i);
+    // DBG_PRINTF("%s: unknown name %s\n", __func__, name);
+    return NULL;
+}
+
+static FATFS *sd_get_fs_by_name(const char *name) {
+    for (size_t i = 0; i < sd_get_num(); ++i)
+        if (0 == strcmp(sd_get_by_num(i)->pcName, name)) return &sd_get_by_num(i)->fatfs;
+    // DBG_PRINTF("%s: unknown name %s\n", __func__, name);
+    return NULL;
+}
+
+void run_mount() {
+    const char *arg1 = strtok(NULL, " ");
+    if (!arg1) arg1 = sd_get_by_num(0)->pcName;
+    FATFS *p_fs = sd_get_fs_by_name(arg1);
+    if (!p_fs) {
+        printf("Unknown logical drive number: \"%s\"\n", arg1);
+        return;
+    }
+    FRESULT fr = f_mount(p_fs, arg1, 1);
+    if (FR_OK != fr) {
+        printf("f_mount error: %s (%d)\n", FRESULT_str(fr), fr);
+        return;
+    }
+    sd_card_t *pSD = sd_get_by_name(arg1);
+    // myASSERT(pSD);
+    pSD->mounted = true;
+}
+
+
 void run_unmount() {
-    f_unmount("");
+    const char *arg1 = strtok(NULL, " ");
+    if (!arg1) arg1 = sd_get_by_num(0)->pcName;
+    FATFS *p_fs = sd_get_fs_by_name(arg1);
+    if (!p_fs) {
+        printf("Unknown logical drive number: \"%s\"\n", arg1);
+        return;
+    }
+    FRESULT fr = f_unmount(arg1);
+    if (FR_OK != fr) {
+        printf("f_unmount error: %s (%d)\n", FRESULT_str(fr), fr);
+        return;
+    }
+    sd_card_t *pSD = sd_get_by_name(arg1);
+    // myASSERT(pSD);
+    pSD->mounted = false;
 }
 
 
@@ -49,7 +96,7 @@ unsigned int getNthFile(FILINFO *fno, unsigned int requested) {
     }
     f_closedir(&dp);
     if (requested == 0) {
-        printf("It seems there are no files");
+        printf("It seems there are no files\n");
         return 0; 
     }
     return getNthFile(fno, 0);
@@ -57,9 +104,15 @@ unsigned int getNthFile(FILINFO *fno, unsigned int requested) {
 
 bool sdTest(void)
 {
-    FATFS fs;
-    FRESULT fr = f_mount(&fs, "", 1);
-    return FR_OK == fr;
+    sd_card_t *pSD = sd_get_by_num(0);
+    FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
+    if(FR_OK != fr) {
+        return false;
+    }
+    else {
+        f_unmount(pSD->pcName);
+        return true;
+    }
 }
 
 void setPathIndex(uint32_t index)

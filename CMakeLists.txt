@@ -43,7 +43,7 @@ endif()
 pico_add_extra_outputs(epd)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --specs=nano.specs")
-target_link_libraries(epd no-OS-FatFS-SD-SDIO-SPI-RPi-Pico pico_stdlib hardware_spi hardware_adc hardware_i2c)
+target_link_libraries(epd FatFs_SPI pico_stdlib hardware_spi hardware_adc hardware_i2c)
 if (DEFINED USE_DORMANT_SLEEP)
     target_link_libraries(hardware_rosc hardware_sleep)
 endif()
